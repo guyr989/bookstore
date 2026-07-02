@@ -86,6 +86,7 @@ namespace Bookstore.Tests
 
             // Act: write it, then re-read from a *fresh* repo on the same file.
             repo.Add(newBook);
+
             var reloaded = new XmlBookRepository(_xmlPath)
                 .GetAll()
                 .Single(b => b.Isbn == "9781234567890");
