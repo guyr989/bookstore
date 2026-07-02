@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -129,6 +130,47 @@ namespace Bookstore.Tests
             var reloaded = new XmlBookRepository(_xmlPath);
             var newBook = reloaded.GetByIsbn("9051234567897");
             Assert.AreEqual("Harry Potter and the Philosopher's Stone", newBook.Title);
+        }
+
+        [Test]
+        public void Edit_WhenIsbnNotFound_Throws()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var missing = new Book
+            {
+                Isbn     = "0000000000000",
+                Title    = "Ghost Book",
+                Language = "en",
+                Authors  = { "Nobody" },
+                Year     = 2020,
+                Price    = 10.00m,
+                Category = "web"
+            };
+
+            Assert.Throws<KeyNotFoundException>(() => repo.Edit(missing));
+        }
+
+        [Test]
+        public void GetByIsbn_OnSameInstance_SeesBookAddedThroughThatInstance()
+        {
+            // Regression guard: GetByIsbn must read the file, not a stale snapshot.
+            // Using ONE repo across Add-then-GetByIsbn would fail if a cache went stale.
+            var repo = new XmlBookRepository(_xmlPath);
+            repo.Add(new Book
+            {
+                Isbn     = "9781234567890",
+                Title    = "Clean Architecture",
+                Language = "en",
+                Authors  = { "Robert C. Martin" },
+                Year     = 2017,
+                Price    = 32.50m,
+                Category = "software"
+            });
+
+            var found = repo.GetByIsbn("9781234567890");
+
+            Assert.IsNotNull(found);
+            Assert.AreEqual("Clean Architecture", found.Title);
         }
 
         private const string SampleXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
