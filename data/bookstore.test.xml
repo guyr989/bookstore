@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TEST environment dataset: small, distinct data so QA can tell at a glance
+     that the app is reading the test file and not local/prod. -->
+<bookstore>
+  <book category="qa">
+    <isbn>9781111111111</isbn>
+    <title lang="en">Test Fixture Alpha</title>
+    <author>QA Author</author>
+    <year>2021</year>
+    <price>9.99</price>
+  </book>
+  <book category="qa" cover="paperback">
+    <isbn>9782222222222</isbn>
+    <title lang="en">Test Fixture Beta</title>
+    <author>First Tester</author>
+    <author>Second Tester</author>
+    <year>2022</year>
+    <price>12.50</price>
+  </book>
+</bookstore>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PRODUCTION store starts empty; the owner adds real inventory through the
+     app. An empty <bookstore> is schema-valid (book has minOccurs="0"). -->
+<bookstore>
+</bookstore>

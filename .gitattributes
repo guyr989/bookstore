@@ -1,0 +1,12 @@
+# Normalize line endings: store as LF in the repo, check out native per-OS.
+# Silences the "LF will be replaced by CRLF" warnings on Windows.
+* text=auto
+
+# Keep these text files consistent regardless of local git settings.
+*.cs   text
+*.csproj text
+*.sln  text
+*.xml  text
+*.xsd  text
+*.json text
+*.md   text
