@@ -16,3 +16,6 @@ npm-debug.log*
 *.env
 Thumbs.db
 .DS_Store
+
+# ---- Local agent / IDE state ----
+.claude/
