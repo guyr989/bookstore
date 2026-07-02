@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using System.Xml.Schema;
 using Bookstore.Core.Models;
+using Bookstore.Core.Validation;
 
 namespace Bookstore.Core.Persistence
 {
@@ -17,7 +20,7 @@ namespace Bookstore.Core.Persistence
 
         public IList<Book> GetAll()
         {
-            var doc = XDocument.Load(_path);
+            var doc = LoadDocument();
 
             return doc.Root
                       .Elements("book")
@@ -29,7 +32,7 @@ namespace Bookstore.Core.Persistence
         {
             if (string.IsNullOrWhiteSpace(isbn)) return null;
 
-            var doc = XDocument.Load(_path);
+            var doc = LoadDocument();
             var bookElement = doc.Root
                                  .Elements("book")
                                  .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
@@ -39,7 +42,17 @@ namespace Bookstore.Core.Persistence
 
         public void Add(Book book)
         {
-            var doc = XDocument.Load(_path);
+            BookValidator.Validate(book);
+
+            var doc = LoadDocument();
+
+            var duplicate = doc.Root
+                               .Elements("book")
+                               .Any(b => (string)b.Element("isbn") == book.Isbn);
+            if (duplicate)
+                throw new InvalidOperationException(
+                    "A book with ISBN '" + book.Isbn + "' already exists.");
+
             doc.Root.Add(BuildBookElement(book));
             doc.Save(_path);
         }
@@ -48,7 +61,9 @@ namespace Bookstore.Core.Persistence
         // false if no such book was found (a normal, non-exceptional outcome).
         public bool Edit(Book book)
         {
-            var doc = XDocument.Load(_path);
+            BookValidator.Validate(book);
+
+            var doc = LoadDocument();
             var existing = doc.Root
                               .Elements("book")
                               .FirstOrDefault(b => (string)b.Element("isbn") == book.Isbn);
@@ -64,7 +79,7 @@ namespace Bookstore.Core.Persistence
         // false if no such book was found.
         public bool Delete(string isbn)
         {
-            var doc = XDocument.Load(_path);
+            var doc = LoadDocument();
             var existing = doc.Root
                               .Elements("book")
                               .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
@@ -74,6 +89,16 @@ namespace Bookstore.Core.Persistence
             existing.Remove();
             doc.Save(_path);
             return true;
+        }
+
+        // Loads the XML file and validates it against the embedded XSD. A file
+        // that does not match the schema (e.g. hand-corrupted) throws
+        // XmlSchemaValidationException instead of silently misbehaving.
+        private XDocument LoadDocument()
+        {
+            var doc = XDocument.Load(_path);
+            doc.Validate(BookstoreSchema.SchemaSet, (sender, e) => { throw e.Exception; });
+            return doc;
         }
 
         private static XElement BuildBookElement(Book book)

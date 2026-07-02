@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Schema;
 using NUnit.Framework;
 using Bookstore.Core.Models;
 using Bookstore.Core.Persistence;
@@ -201,6 +202,94 @@ namespace Bookstore.Tests
 
             Assert.IsFalse(removed);
             Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
+        }
+
+        // ---- Data integrity (Step 13) ---------------------------------------
+
+        // Builds an otherwise-valid book, so each negative test can isolate the
+        // single field it wants to invalidate.
+        private static Book ValidBook()
+        {
+            return new Book
+            {
+                Isbn     = "9781111111111",
+                Title    = "A Valid Book",
+                Language = "en",
+                Authors  = { "Some Author" },
+                Year     = 2020,
+                Price    = 19.99m,
+                Category = "software"
+            };
+        }
+
+        [Test]
+        public void Add_WithBlankTitle_ThrowsAndWritesNothing()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var invalid = ValidBook();
+            invalid.Title = "   ";
+
+            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
+            // File untouched: still the original 3 books.
+            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
+        }
+
+        [Test]
+        public void Add_WithNonThirteenDigitIsbn_Throws()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var invalid = ValidBook();
+            invalid.Isbn = "123";
+
+            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
+        }
+
+        [Test]
+        public void Add_WithNoAuthors_Throws()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var invalid = ValidBook();
+            invalid.Authors = new List<string>();
+
+            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
+        }
+
+        [Test]
+        public void Add_DuplicateIsbn_ThrowsAndDoesNotDuplicate()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var dup = ValidBook();
+            dup.Isbn = "9051234567897"; // already in the seed (Harry Potter)
+
+            Assert.Throws<InvalidOperationException>(() => repo.Add(dup));
+            // Still exactly one book with that ISBN.
+            Assert.AreEqual(1,
+                new XmlBookRepository(_xmlPath).GetAll().Count(b => b.Isbn == "9051234567897"));
+        }
+
+        [Test]
+        public void Edit_WithInvalidBook_Throws()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var invalid = ValidBook();
+            invalid.Isbn = "9051234567897"; // exists, so it would otherwise edit
+            invalid.Category = "";           // but this is invalid
+
+            Assert.Throws<ArgumentException>(() => repo.Edit(invalid));
+        }
+
+        [Test]
+        public void GetAll_WhenFileViolatesSchema_Throws()
+        {
+            // A <book> missing the required category attribute violates the XSD.
+            File.WriteAllText(_xmlPath,
+                "<bookstore><book><isbn>9051234567897</isbn>" +
+                "<title lang=\"en\">Broken</title><author>X</author>" +
+                "<year>2000</year><price>1.00</price></book></bookstore>");
+
+            var repo = new XmlBookRepository(_xmlPath);
+
+            Assert.Throws<XmlSchemaValidationException>(() => repo.GetAll());
         }
 
         private const string SampleXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
