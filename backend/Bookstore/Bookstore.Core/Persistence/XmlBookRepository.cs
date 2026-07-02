@@ -20,40 +20,31 @@ namespace Bookstore.Core.Persistence
 
         public IList<Book> GetAll()
         {
-            var doc = LoadDocument();
-
-            return doc.Root
-                      .Elements("book")
-                      .Select(MapBook)
-                      .ToList();
+            return loadDoc().Root
+                            .Elements("book")
+                            .Select(toBook)
+                            .ToList();
         }
 
         public Book GetByIsbn(string isbn)
         {
             if (string.IsNullOrWhiteSpace(isbn)) return null;
 
-            var doc = LoadDocument();
-            var bookElement = doc.Root
-                                 .Elements("book")
-                                 .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
-
-            return bookElement != null ? MapBook(bookElement) : null;
+            var el = findBook(loadDoc(), isbn);
+            return el != null ? toBook(el) : null;
         }
 
         public void Add(Book book)
         {
             BookValidator.Validate(book);
 
-            var doc = LoadDocument();
+            var doc = loadDoc();
 
-            var duplicate = doc.Root
-                               .Elements("book")
-                               .Any(b => (string)b.Element("isbn") == book.Isbn);
-            if (duplicate)
+            if (findBook(doc, book.Isbn) != null)
                 throw new InvalidOperationException(
                     "A book with ISBN '" + book.Isbn + "' already exists.");
 
-            doc.Root.Add(BuildBookElement(book));
+            doc.Root.Add(toXml(book));
             doc.Save(_path);
         }
 
@@ -63,14 +54,12 @@ namespace Bookstore.Core.Persistence
         {
             BookValidator.Validate(book);
 
-            var doc = LoadDocument();
-            var existing = doc.Root
-                              .Elements("book")
-                              .FirstOrDefault(b => (string)b.Element("isbn") == book.Isbn);
+            var doc = loadDoc();
+            var el = findBook(doc, book.Isbn);
 
-            if (existing == null) return false;
+            if (el == null) return false;
 
-            existing.ReplaceWith(BuildBookElement(book));
+            el.ReplaceWith(toXml(book));
             doc.Save(_path);
             return true;
         }
@@ -79,14 +68,12 @@ namespace Bookstore.Core.Persistence
         // false if no such book was found.
         public bool Delete(string isbn)
         {
-            var doc = LoadDocument();
-            var existing = doc.Root
-                              .Elements("book")
-                              .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
+            var doc = loadDoc();
+            var el = findBook(doc, isbn);
 
-            if (existing == null) return false;
+            if (el == null) return false;
 
-            existing.Remove();
+            el.Remove();
             doc.Save(_path);
             return true;
         }
@@ -94,14 +81,23 @@ namespace Bookstore.Core.Persistence
         // Loads the XML file and validates it against the embedded XSD. A file
         // that does not match the schema (e.g. hand-corrupted) throws
         // XmlSchemaValidationException instead of silently misbehaving.
-        private XDocument LoadDocument()
+        private XDocument loadDoc()
         {
             var doc = XDocument.Load(_path);
             doc.Validate(BookstoreSchema.SchemaSet, (sender, e) => { throw e.Exception; });
             return doc;
         }
 
-        private static XElement BuildBookElement(Book book)
+        private static XElement findBook(XDocument doc, string isbn)
+        {
+            return doc.Root
+                      .Elements("book")
+                      .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
+        }
+
+        // Book -> schema-ordered <book> element:
+        // category, optional cover, isbn, title[@lang], author*, year, price.
+        private static XElement toXml(Book book)
         {
             return new XElement("book",
                 new XAttribute("category", book.Category),
@@ -113,7 +109,7 @@ namespace Bookstore.Core.Persistence
                 new XElement("price", book.Price.ToString(CultureInfo.InvariantCulture)));
         }
 
-        private static Book MapBook(XElement el)
+        private static Book toBook(XElement el)
         {
             var title = el.Element("title");
 
