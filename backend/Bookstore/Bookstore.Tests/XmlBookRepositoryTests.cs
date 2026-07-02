@@ -55,13 +55,13 @@ namespace Bookstore.Tests
             var repo = new XmlBookRepository(_xmlPath);
 
             // Act
-            var xquery = repo.GetAll().Single(b => b.Isbn == "9031234567897");
+            var book = repo.GetByIsbn("9031234567897");
 
             // Assert
-            Assert.AreEqual(5, xquery.Authors.Count);
+            Assert.AreEqual(5, book.Authors.Count);
             Assert.AreEqual(
                 "James McGovern, Per Bothner, Kurt Cagle, James Linn, Vaidyanathan Nagarajan",
-                xquery.AuthorsDisplay);
+                book.AuthorsDisplay);
             Console.WriteLine("GetAll_ReadsMultipleAuthorsIntoAList end");
         }
 
@@ -100,6 +100,35 @@ namespace Bookstore.Tests
             Assert.AreEqual(32.50m, reloaded.Price);
             Assert.AreEqual("software", reloaded.Category);
             Assert.AreEqual("hardcover", reloaded.Cover);
+        }
+        [Test]
+        public void GetByIsbn_ReturnsCorrectBook()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var book = repo.GetByIsbn("9051234567897");
+            Assert.AreEqual("Harry Potter", book.Title);
+            Assert.AreEqual("J K. Rowling", book.AuthorsDisplay);
+            Assert.AreEqual(2005, book.Year);
+            Assert.AreEqual(29.99m, book.Price);
+        }
+
+        [Test]
+        public void Edit()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            repo.Edit(new Book {
+                Isbn = "9051234567897",
+                Title = "Harry Potter and the Philosopher's Stone",
+                Language = "en",
+                Authors = { "J K. Rowling" },
+                Year = 2005,
+                Price = 29.99m,
+                Category = "children",
+                Cover = null
+            });
+            var reloaded = new XmlBookRepository(_xmlPath);
+            var newBook = reloaded.GetByIsbn("9051234567897");
+            Assert.AreEqual("Harry Potter and the Philosopher's Stone", newBook.Title);
         }
 
         private const string SampleXml = @"<?xml version=""1.0"" encoding=""utf-8""?>

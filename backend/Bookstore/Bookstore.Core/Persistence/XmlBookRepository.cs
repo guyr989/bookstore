@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
@@ -9,10 +10,31 @@ namespace Bookstore.Core.Persistence
     public class XmlBookRepository
     {
         private readonly string _path;
-
+        private Dictionary<string, XElement> _bookCache;
         public XmlBookRepository(string path)
         {
             _path = path;
+            InitializeCache();
+        }
+        private void InitializeCache()
+        {
+            var doc = XDocument.Load(_path);
+
+            if (doc.Root == null)
+            {
+                _bookCache = new Dictionary<string, XElement>();
+                return;
+            }
+
+            // Filters out elements missing the <isbn> node to prevent runtime errors
+            _bookCache = doc.Root
+                            .Elements("book")
+                            .Where(b => b.Element("isbn") != null)
+                            .ToDictionary(
+                                b => b.Element("isbn").Value,
+                                b => b,
+                                StringComparer.OrdinalIgnoreCase
+                            );
         }
 
         public IList<Book> GetAll()
@@ -27,7 +49,7 @@ namespace Bookstore.Core.Persistence
 
         public void Add(Book book) { 
             var doc = XDocument.Load(_path);
-            doc.Element("bookstore").Add(new XElement("book",
+            doc.Root.Add(new XElement("book",
                 new XAttribute("category", book.Category),
                 book.Cover != null ? new XAttribute("cover", book.Cover) : null,
                 new XElement("isbn", book.Isbn),
@@ -36,6 +58,38 @@ namespace Bookstore.Core.Persistence
                 new XElement("year", book.Year.ToString(CultureInfo.InvariantCulture)),
                 new XElement("price", book.Price.ToString(CultureInfo.InvariantCulture))
             ));
+            doc.Save(_path);
+        }
+
+
+        public Book GetByIsbn(string isbn)
+        {
+            if (string.IsNullOrWhiteSpace(isbn)) return null;
+
+            XElement bookElement;
+            if (_bookCache.TryGetValue(isbn, out bookElement))
+            {
+                return MapBook(bookElement);
+            }
+
+            return null;
+        }
+
+        public void Edit(Book book) {
+            var doc = XDocument.Load(_path);
+            var bookElement = GetByIsbn(book.Isbn);
+            doc.Descendants("book")
+               .Where(b => (string)b.Element("isbn") == book.Isbn)
+               .FirstOrDefault()
+               .ReplaceWith(new XElement("book",
+                   new XAttribute("category", book.Category),
+                   book.Cover != null ? new XAttribute("cover", book.Cover) : null,
+                   new XElement("isbn", book.Isbn),
+                   new XElement("title", new XAttribute("lang", book.Language), book.Title),
+                   book.Authors.Select(a => new XElement("author", a)),
+                   new XElement("year", book.Year.ToString(CultureInfo.InvariantCulture)),
+                   new XElement("price", book.Price.ToString(CultureInfo.InvariantCulture))
+               ));
             doc.Save(_path);
         }
 
