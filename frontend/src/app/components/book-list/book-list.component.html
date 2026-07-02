@@ -1,0 +1,42 @@
+<div class="header">
+  <h2>Catalog</h2>
+  <a routerLink="/add" class="btn primary">+ Add book</a>
+</div>
+
+@if (loading) {
+  <p class="muted">Loading…</p>
+} @else if (books.length === 0) {
+  <p class="muted">No books yet. Add the first one!</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>ISBN</th>
+        <th>Title</th>
+        <th>Author(s)</th>
+        <th>Category</th>
+        <th>Year</th>
+        <th>Price</th>
+        <th>Cover</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (book of books; track book.isbn) {
+        <tr>
+          <td class="mono">{{ book.isbn }}</td>
+          <td>{{ book.title }} <span class="muted">({{ book.language }})</span></td>
+          <td>{{ authorsOf(book) }}</td>
+          <td>{{ book.category }}</td>
+          <td>{{ book.year }}</td>
+          <td>{{ book.price | number:'1.2-2' }}</td>
+          <td>{{ book.cover || '—' }}</td>
+          <td class="actions">
+            <a [routerLink]="['/edit', book.isbn]" class="btn">Edit</a>
+            <button type="button" class="btn danger" (click)="remove(book)">Delete</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

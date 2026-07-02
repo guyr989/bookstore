@@ -1,0 +1,82 @@
+<div class="header">
+  <h2>{{ isEdit ? 'Edit book' : 'Add a book' }}</h2>
+  <a routerLink="/" class="btn">← Back to catalog</a>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <label>
+    ISBN (13 digits)
+    <input formControlName="isbn" maxlength="13" placeholder="9781234567890"
+           [class.bad]="invalid('isbn')" />
+    @if (invalid('isbn')) {
+      <small class="error-text">ISBN must be exactly 13 digits.</small>
+    }
+  </label>
+
+  <label>
+    Title
+    <input formControlName="title" [class.bad]="invalid('title')" />
+    @if (invalid('title')) {
+      <small class="error-text">Title is required.</small>
+    }
+  </label>
+
+  <label>
+    Language
+    <input formControlName="language" [class.bad]="invalid('language')" />
+    @if (invalid('language')) {
+      <small class="error-text">Language is required.</small>
+    }
+  </label>
+
+  <fieldset formArrayName="authors">
+    <legend>Author(s)</legend>
+    @for (ctrl of authors.controls; track $index) {
+      <div class="author-row">
+        <input [formControlName]="$index" placeholder="Author name"
+               [class.bad]="ctrl.invalid && (ctrl.dirty || ctrl.touched)" />
+        <button type="button" class="btn" (click)="removeAuthor($index)"
+                [disabled]="authors.length === 1">−</button>
+      </div>
+    }
+    <button type="button" class="btn" (click)="addAuthor()">+ Add author</button>
+  </fieldset>
+
+  <div class="row">
+    <label>
+      Year
+      <input type="number" formControlName="year" [class.bad]="invalid('year')" />
+      @if (invalid('year')) {
+        <small class="error-text">Enter a valid year.</small>
+      }
+    </label>
+
+    <label>
+      Price
+      <input type="number" step="0.01" formControlName="price" [class.bad]="invalid('price')" />
+      @if (invalid('price')) {
+        <small class="error-text">Price cannot be negative.</small>
+      }
+    </label>
+  </div>
+
+  <div class="row">
+    <label>
+      Category
+      <input formControlName="category" placeholder="e.g. web, children"
+             [class.bad]="invalid('category')" />
+      @if (invalid('category')) {
+        <small class="error-text">Category is required.</small>
+      }
+    </label>
+
+    <label>
+      Cover (optional)
+      <input formControlName="cover" placeholder="e.g. paperback" />
+    </label>
+  </div>
+
+  <button type="submit" class="btn primary" [disabled]="saving">
+    {{ saving ? 'Saving…' : (isEdit ? 'Save changes' : 'Add book') }}
+  </button>
+</form>
