@@ -44,23 +44,38 @@ namespace Bookstore.Core.Persistence
             doc.Save(_path);
         }
 
-        public void Edit(Book book)
+        // Returns true if a book with this ISBN existed and was replaced;
+        // false if no such book was found (a normal, non-exceptional outcome).
+        public bool Edit(Book book)
         {
             var doc = XDocument.Load(_path);
             var existing = doc.Root
                               .Elements("book")
                               .FirstOrDefault(b => (string)b.Element("isbn") == book.Isbn);
 
-            if (existing == null)
-                throw new KeyNotFoundException(
-                    "No book found with ISBN '" + book.Isbn + "'.");
+            if (existing == null) return false;
 
             existing.ReplaceWith(BuildBookElement(book));
             doc.Save(_path);
+            return true;
         }
 
-        // Serializes a Book into a schema-ordered <book> element:
-        // category, optional cover, isbn, title[@lang], author*, year, price.
+        // Returns true if a book with this ISBN existed and was removed;
+        // false if no such book was found.
+        public bool Delete(string isbn)
+        {
+            var doc = XDocument.Load(_path);
+            var existing = doc.Root
+                              .Elements("book")
+                              .FirstOrDefault(b => (string)b.Element("isbn") == isbn);
+
+            if (existing == null) return false;
+
+            existing.Remove();
+            doc.Save(_path);
+            return true;
+        }
+
         private static XElement BuildBookElement(Book book)
         {
             return new XElement("book",

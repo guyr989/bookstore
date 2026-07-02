@@ -133,7 +133,7 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void Edit_WhenIsbnNotFound_Throws()
+        public void Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var missing = new Book
@@ -147,7 +147,11 @@ namespace Bookstore.Tests
                 Category = "web"
             };
 
-            Assert.Throws<KeyNotFoundException>(() => repo.Edit(missing));
+            var edited = repo.Edit(missing);
+
+            Assert.IsFalse(edited);
+            // File untouched: still the original 3 books, no ghost added.
+            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         [Test]
@@ -171,6 +175,32 @@ namespace Bookstore.Tests
 
             Assert.IsNotNull(found);
             Assert.AreEqual("Clean Architecture", found.Title);
+        }
+
+        [Test]
+        public void Delete_RemovesOnlyTheTargetBook()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+
+            var removed = repo.Delete("9051234567897");
+
+            Assert.IsTrue(removed);
+            var all = new XmlBookRepository(_xmlPath).GetAll();
+            // Exactly one gone: target absent, the other two survive.
+            Assert.AreEqual(2, all.Count);
+            Assert.IsNull(all.SingleOrDefault(b => b.Isbn == "9051234567897"));
+            Assert.IsNotNull(all.SingleOrDefault(b => b.Isbn == "9031234567897"));
+        }
+
+        [Test]
+        public void Delete_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+
+            var removed = repo.Delete("0000000000000");
+
+            Assert.IsFalse(removed);
+            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         private const string SampleXml = @"<?xml version=""1.0"" encoding=""utf-8""?>
