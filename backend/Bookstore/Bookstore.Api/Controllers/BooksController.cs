@@ -86,7 +86,7 @@ namespace Bookstore.Api.Controllers
 
         private IHttpActionResult Conflict(string message)
         {
-            return Content(System.Net.HttpStatusCode.Conflict, new { Message = message });
+            return Content(System.Net.HttpStatusCode.Conflict, message);
         }
     }
 }
