@@ -42,7 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Book.cs" />
-    <Compile Include="Presistence\XmlBookRepository.cs" />
+    <Compile Include="Persistence\XmlBookRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />
