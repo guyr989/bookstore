@@ -1,3 +1,6 @@
+/* Table base + mobile card layout are shared via styles.css
+   (table.table-container); only page-specific rules live here. */
+
 .header {
   display: flex;
   flex-direction: column;
@@ -9,82 +12,13 @@
   max-width: 60ch;
 }
 
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 1rem;
-}
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-}
-th {
-  background: #f4f4f4;
-}
-tr:nth-child(even) {
-  background: #fafafa;
-}
-
-.mono {
-  font-family: Consolas, monospace;
-}
-.muted {
-  color: #777;
-}
-
 .actions {
   white-space: nowrap;
   display: flex;
   gap: 0.75rem;
-  border: 0;
 }
 
-/* Small screens: same card treatment as the book list. */
 @media screen and (max-width: 768px) {
-  table.table-container thead {
-    display: none;
-  }
-
-  table.table-container,
-  table.table-container tbody {
-    display: block;
-    width: 100%;
-  }
-
-  table.table-container tr {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-bottom: 20px;
-    padding: 16px;
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-
-  table.table-container td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 12px;
-    border-bottom: 1px dashed #f0f0f0;
-  }
-
-  /* Field names come from data-label, since the thead is hidden on mobile */
-  table.table-container td[data-label]::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #607d8b;
-  }
-
-  table.table-container td:last-child {
-    border-bottom: none;
-  }
-
   .actions {
     justify-content: center;
   }

@@ -1,27 +1,49 @@
 # InsurTix Bookstore
 
-A bookstore catalog manager: **ASP.NET Web API 2 (.NET Framework 4.8.1)** backend with an **XML file as the database**, and an **Angular 17** frontend. Full CRUD keyed by ISBN, HTML reports, Swagger docs, strict TDD, and per-environment (local/test/prod) XML data files.
+A bookstore catalog manager: **ASP.NET Web API 2 (.NET Framework 4.8.1)** backend with an **XML file as the database**, and an **Angular 17** frontend. Full CRUD keyed by ISBN, HTML reports, Swagger docs, strict TDD, per-environment (local/test/prod) XML data files, and **file version history with rollback**.
 
 ## Architecture
 
 ```
 Angular 17 SPA  ──HTTP/JSON──▶  ASP.NET Web API 2 (.NET Fx 4.8.1, IIS Express/IIS)
- reactive forms,                ├── BooksController    CRUD by ISBN (400/404/409 semantics)
- input sanitization,            ├── ReportsController  GET /api/reports/books.html
- flash toasts                   ├── Swagger (Swashbuckle)  /swagger
-                                └── Bookstore.Core
+ reactive forms,                ├── BooksController     CRUD by ISBN (400/404/409 semantics)
+ input sanitization,            ├── ReportsController   GET /api/reports/books.html
+ flash toasts,                  ├── VersionsController  GET/restore/delete snapshots
+ confirm dialogs,               ├── Swagger (Swashbuckle)  /swagger
+ version history UI             └── Bookstore.Core
                                     ├── XmlBookRepository (LINQ to XML)
+                                    ├── FileVersionStore (rollback snapshots)
                                     ├── BookValidator (no empty/invalid objects)
                                     └── embedded XSD, validated on every load
                                             │
                                 bookstore.{local|test|prod}.xml  (App_Data)
+                                versions/bookstore.*.vNNNN.xml   (rollback history)
 ```
 
-- `backend/Bookstore/Bookstore.Core` — domain: `Book` model, XML repository, validation. No web dependencies.
+- `backend/Bookstore/Bookstore.Core` — domain: `Book` model, XML repository, version store, validation. No web dependencies.
 - `backend/Bookstore/Bookstore.Api` — Web API 2 host: controllers, Swagger, environment config.
-- `backend/Bookstore/Bookstore.Tests` — NUnit suite (29 tests: repository + controllers).
-- `frontend/` — Angular 17 app (15 Karma specs).
+- `backend/Bookstore/Bookstore.Tests` — NUnit suite (49 tests: repository + version store + controllers).
+- `frontend/` — Angular 17 app (26 Karma specs).
 - `data/` — canonical XSD schema + seed data files.
+
+## Version history (rollback)
+
+Every successful save (add / edit / delete) first snapshots the catalog file
+into a `versions/` folder next to it — version N is the state **before**
+save N, so restoring the newest version undoes the latest save and the
+original file is always recoverable as v1.
+
+- **UI:** the *History* page lists versions (number, date, time) with
+  *Restore* (undoable — the current state is stashed first) and *Delete*
+  (requires typing the word `delete`).
+- **API:** `GET /api/versions`, `POST /api/versions/{n}/restore`,
+  `DELETE /api/versions/{n}`.
+- **Safety:** snapshot numbering is serialized under a process-wide lock;
+  a restore validates the snapshot against the XSD before making it live
+  (corrupted snapshot → HTTP 409); history is capped at the 100 newest
+  snapshots. Known limitation: version numbers are reused after the
+  highest-numbered version is deleted, so a stale History tab can restore a
+  newer file bearing the same number.
 
 ## Running it
 

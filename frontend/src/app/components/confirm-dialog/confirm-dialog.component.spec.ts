@@ -60,6 +60,18 @@ describe('ConfirmDialogComponent', () => {
     expect(confirmButton().disabled).toBeFalse();
   });
 
+  it('cancels a displaced request when ask() is called again', async () => {
+    const first = confirm.ask({ title: 'First', message: 'A' });
+    const second = confirm.ask({ title: 'Second', message: 'B' });
+    fixture.detectChanges();
+
+    // The first caller must not be left awaiting forever.
+    await expectAsync(first).toBeResolvedTo(false);
+
+    confirmButton().click();
+    await expectAsync(second).toBeResolvedTo(true);
+  });
+
   it('does not accept the wrong word', () => {
     confirm.ask({ title: 'Delete version', message: 'Sure?', requireWord: 'delete' });
     fixture.detectChanges();

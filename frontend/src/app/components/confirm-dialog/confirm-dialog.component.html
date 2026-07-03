@@ -1,7 +1,7 @@
 @if (confirm.current(); as req) {
   <div class="backdrop" (click)="close(false)">
-    <div class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="req.title"
-         (click)="$event.stopPropagation()">
+    <div class="dialog" #dialogBox tabindex="-1" role="dialog" aria-modal="true"
+         [attr.aria-label]="req.title" (click)="$event.stopPropagation()">
       <h3 [class.danger-title]="req.danger">{{ req.title }}</h3>
       <p>{{ req.message }}</p>
 

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { FileVersion } from '../../models/file-version';
 import { ConfirmService } from '../../services/confirm.service';
 import { ToastService } from '../../services/toast.service';
@@ -54,21 +55,8 @@ export class VersionsComponent implements OnInit {
     });
     if (!ok) return;
 
-    this.busy = true;
-    this.versionService.restore(version.number).subscribe({
-      next: () => {
-        this.busy = false;
-        this.toast.success(`Restored version ${version.number}.`);
-        this.load();
-      },
-      error: err => {
-        this.busy = false;
-        this.toast.error(err.status === 404
-          ? 'That version no longer exists.'
-          : 'Restore failed.');
-        this.load();
-      }
-    });
+    this.run(this.versionService.restore(version.number),
+      `Restored version ${version.number}.`, 'Restore failed.');
   }
 
   async remove(version: FileVersion): Promise<void> {
@@ -81,18 +69,24 @@ export class VersionsComponent implements OnInit {
     });
     if (!ok) return;
 
+    this.run(this.versionService.delete(version.number),
+      `Deleted version ${version.number}.`, 'Delete failed.');
+  }
+
+  // Shared restore/delete plumbing: busy flag, outcome toast, list reload.
+  private run(action: Observable<void>, successText: string, failureText: string): void {
     this.busy = true;
-    this.versionService.delete(version.number).subscribe({
+    action.subscribe({
       next: () => {
         this.busy = false;
-        this.toast.success(`Deleted version ${version.number}.`);
+        this.toast.success(successText);
         this.load();
       },
       error: err => {
         this.busy = false;
-        this.toast.error(err.status === 404
-          ? 'That version no longer exists.'
-          : 'Delete failed.');
+        this.toast.error(err.status === 404 ? 'That version no longer exists.'
+          : err.status === 409 ? (err.error ?? failureText)
+          : failureText);
         this.load();
       }
     });

@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security;
@@ -34,8 +36,7 @@ namespace Bookstore.Api.Controllers
         private string buildHtml()
         {
             var books = _repo.GetAll();
-            decimal total = 0;
-            foreach (var b in books) total += b.Price;
+            var total = books.Sum(b => b.Price);
 
             var sb = new StringBuilder();
             sb.Append("<!DOCTYPE html><html><head><meta charset=\"utf-8\">")
@@ -58,7 +59,7 @@ namespace Bookstore.Api.Controllers
               .Append("<p class=\"summary\">").Append(books.Count)
               .Append(books.Count == 1 ? " book" : " books")
               .Append(" in the catalog &middot; combined list price ")
-              .Append(total.ToString("0.00")).Append("</p>")
+              .Append(total.ToString("0.00", CultureInfo.InvariantCulture)).Append("</p>")
               .Append("<table><thead><tr>")
               .Append("<th>Title</th><th>Author(s)</th><th>Category</th><th>Year</th><th>Price</th>")
               .Append("</tr></thead><tbody>");
@@ -70,13 +71,13 @@ namespace Bookstore.Api.Controllers
                   .Append("<td>").Append(esc(book.AuthorsDisplay)).Append("</td>")
                   .Append("<td>").Append(esc(book.Category)).Append("</td>")
                   .Append("<td class=\"num\">").Append(book.Year).Append("</td>")
-                  .Append("<td class=\"num\">").Append(book.Price.ToString("0.00")).Append("</td>")
+                  .Append("<td class=\"num\">").Append(book.Price.ToString("0.00", CultureInfo.InvariantCulture)).Append("</td>")
                   .Append("</tr>");
             }
 
             sb.Append("</tbody><tfoot><tr>")
               .Append("<td colspan=\"4\">Total</td>")
-              .Append("<td class=\"num\">").Append(total.ToString("0.00")).Append("</td>")
+              .Append("<td class=\"num\">").Append(total.ToString("0.00", CultureInfo.InvariantCulture)).Append("</td>")
               .Append("</tr></tfoot></table></body></html>");
             return sb.ToString();
         }

@@ -315,6 +315,29 @@ namespace Bookstore.Tests
         }
 
         [Test]
+        public void Add_ThenRestoringV1_UndoesTheVeryFirstSave()
+        {
+            // The point of rollback: the state BEFORE a save must be
+            // recoverable — including before the first save ever made.
+            var path = versionedXmlPath();
+            try
+            {
+                var versions = new FileVersionStore(path);
+                var repo = new XmlBookRepository(path, versions);
+
+                repo.Add(ValidBook()); // catalog goes 3 -> 4 books
+
+                versions.Restore(1);   // undo it
+
+                Assert.AreEqual(3, new XmlBookRepository(path).GetAll().Count);
+            }
+            finally
+            {
+                Directory.Delete(Path.GetDirectoryName(path), recursive: true);
+            }
+        }
+
+        [Test]
         public void Edit_WhenIsbnNotFound_WithVersionStore_SnapshotsNothing()
         {
             var path = versionedXmlPath();

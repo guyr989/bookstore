@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmService } from '../../services/confirm.service';
@@ -16,7 +16,18 @@ import { ConfirmService } from '../../services/confirm.service';
 export class ConfirmDialogComponent {
   typed = '';
 
-  constructor(public confirm: ConfirmService) {}
+  @ViewChild('dialogBox') dialogBox?: ElementRef<HTMLElement>;
+
+  constructor(public confirm: ConfirmService) {
+    // Move keyboard focus into the dialog when it opens; otherwise focus
+    // stays on the triggering button behind the backdrop and Enter/Space
+    // would re-fire it.
+    effect(() => {
+      if (this.confirm.current()) {
+        setTimeout(() => this.dialogBox?.nativeElement.focus());
+      }
+    });
+  }
 
   get canConfirm(): boolean {
     const req = this.confirm.current();

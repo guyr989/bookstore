@@ -56,3 +56,74 @@ input:focus-visible {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Shared data-table treatment (book list, version history). */
+table.table-container {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+}
+table.table-container th,
+table.table-container td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+table.table-container th {
+  background: #f4f4f4;
+}
+table.table-container tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.mono {
+  font-family: Consolas, monospace;
+}
+.muted {
+  color: #777;
+}
+
+/* Small screens: each row becomes a labeled card (the thead is hidden, so
+   field names come from each cell's data-label attribute). */
+@media screen and (max-width: 768px) {
+  table.table-container thead {
+    display: none;
+  }
+
+  table.table-container,
+  table.table-container tbody {
+    display: block;
+    width: 100%;
+  }
+
+  table.table-container tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  table.table-container td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 12px;
+    border-bottom: 1px dashed #f0f0f0;
+  }
+
+  table.table-container td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #607d8b;
+  }
+
+  table.table-container td:last-child {
+    border-bottom: none;
+  }
+}

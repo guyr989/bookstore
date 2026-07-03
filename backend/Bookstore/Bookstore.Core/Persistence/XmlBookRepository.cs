@@ -84,12 +84,16 @@ namespace Bookstore.Core.Persistence
             return true;
         }
 
-        // Persist and, when versioning is enabled, snapshot the new state so
-        // this save shows up in the rollback history.
+        // When versioning is enabled, stash the state being REPLACED before
+        // writing: version N is the catalog as it was before save N, so
+        // restoring the newest version undoes the latest save — including the
+        // very first one (the original file becomes v1). Snapshotting before
+        // the write also keeps the invariant that an exception from save()
+        // means nothing was persisted.
         private void save(XDocument doc)
         {
-            doc.Save(_path);
             if (_versions != null) _versions.Snapshot();
+            doc.Save(_path);
         }
 
         // Loads the XML file and validates it against the embedded XSD. A file

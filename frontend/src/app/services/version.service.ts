@@ -15,7 +15,9 @@ export class VersionService {
   }
 
   restore(version: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${version}/restore`, null);
+    // Empty-object body (not null): guarantees a Content-Length header so
+    // strict HTTP frontends (IIS returns 411 otherwise) always accept it.
+    return this.http.post<void>(`${this.baseUrl}/${version}/restore`, {});
   }
 
   delete(version: number): Observable<void> {

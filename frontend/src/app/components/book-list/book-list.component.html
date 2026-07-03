@@ -26,7 +26,7 @@
         <tr>
           <td class="mono" data-label="ISBN">{{ book.isbn }}</td>
           <td data-label="Title">{{ book.title }} <span class="muted">({{ book.language }})</span></td>
-          <td data-label="Author(s)"><div class="authors">{{ authorsOf(book) }}</div></td>
+          <td data-label="Author(s)"><div class="authors" [title]="authorsOf(book)">{{ authorsOf(book) }}</div></td>
           <td data-label="Category">{{ book.category }}</td>
           <td data-label="Year">{{ book.year }}</td>
           <td data-label="Price">{{ book.price | number:'1.2-2' }}</td>

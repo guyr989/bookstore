@@ -17,6 +17,10 @@ export class ConfirmService {
   private resolve?: (ok: boolean) => void;
 
   ask(request: ConfirmRequest): Promise<boolean> {
+    // Only one dialog can exist: if a request is still open (e.g. a second
+    // button reached via keyboard behind the backdrop), settle it as
+    // cancelled so its caller is never left awaiting forever.
+    this.resolve?.(false);
     this.current.set(request);
     return new Promise<boolean>(resolve => (this.resolve = resolve));
   }

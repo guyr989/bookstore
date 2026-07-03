@@ -118,6 +118,30 @@ namespace Bookstore.Tests
         }
 
         [Test]
+        public void List_IgnoresFilesThatOnlyResembleVersions()
+        {
+            _store.Snapshot(); // v1
+            // Editor/backup litter: Directory.GetFiles' 3-char-extension quirk
+            // matches "*.xml~" for pattern "*.xml"; these must not become
+            // phantom (duplicate) version numbers.
+            File.WriteAllText(Path.Combine(_dir, "versions", "bookstore.v0001.xml~"), "junk");
+            File.WriteAllText(Path.Combine(_dir, "versions", "bookstore.v12.xml"), "junk");
+
+            Assert.AreEqual(new[] { 1 }, _store.List().Select(v => v.Number).ToArray());
+        }
+
+        [Test]
+        public void Restore_WhenDataFileIsMissing_StillRestoresTheVersion()
+        {
+            File.WriteAllText(_dataPath, "<bookstore><!-- old --></bookstore>");
+            _store.Snapshot();
+            File.Delete(_dataPath); // catalog lost; history is the recovery path
+
+            Assert.IsTrue(_store.Restore(1));
+            Assert.AreEqual("<bookstore><!-- old --></bookstore>", File.ReadAllText(_dataPath));
+        }
+
+        [Test]
         public void Snapshot_NumbersContinueFromTheHighestRemainingVersion()
         {
             _store.Snapshot(); // v1

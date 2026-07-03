@@ -28,7 +28,17 @@ namespace Bookstore.Api.Controllers
         [HttpPost, Route("{number:int}/restore")]
         public IHttpActionResult Restore(int number)
         {
-            if (!_versions.Restore(number)) return NotFound();
+            try
+            {
+                if (!_versions.Restore(number)) return NotFound();
+            }
+            catch (System.Xml.Schema.XmlSchemaValidationException)
+            {
+                // The snapshot on disk no longer matches the schema (e.g. it
+                // was hand-edited): refuse to make it the live catalog.
+                return Content(System.Net.HttpStatusCode.Conflict,
+                    "Version " + number + " is corrupted and cannot be restored.");
+            }
             return Ok();
         }
 

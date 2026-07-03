@@ -41,7 +41,8 @@ export class ReportComponent {
   // Re-request the report without leaving the page: a fresh cache-busting
   // URL makes the iframe reload the server-rendered HTML.
   refresh(): void {
-    this.url = this.trust(this.rawUrl + '?t=' + Date.now());
+    const sep = this.rawUrl.includes('?') ? '&' : '?';
+    this.url = this.trust(this.rawUrl + sep + 't=' + Date.now());
   }
 
   // The URL comes from our own environment config (not user input), so
