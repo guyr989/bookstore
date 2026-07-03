@@ -1,0 +1,37 @@
+<div class="header">
+  <h2>Version history</h2>
+  <p class="muted hint">Every save keeps a snapshot of the catalog file. Restore rolls the catalog
+    back (the current state is stashed first, so it's undoable).</p>
+</div>
+
+@if (loading) {
+  <p class="muted">Loading…</p>
+} @else if (versions.length === 0) {
+  <p class="muted">No versions yet. They appear here after your first save.</p>
+} @else {
+  <table class="table-container">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (version of versions; track version.number) {
+        <tr>
+          <td class="mono">v{{ version.number }}</td>
+          <td>{{ version.savedAtUtc | date:'mediumDate' }}</td>
+          <td>{{ version.savedAtUtc | date:'HH:mm:ss' }}</td>
+          <td class="actions">
+            <button type="button" class="btn primary" [disabled]="busy"
+                    (click)="restore(version)">Restore</button>
+            <button type="button" class="btn danger" [disabled]="busy"
+                    (click)="remove(version)">Delete</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

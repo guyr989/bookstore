@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Book } from '../../models/book';
 import { BookService } from '../../services/book.service';
+import { ConfirmService } from '../../services/confirm.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class BookListComponent implements OnInit {
 
   constructor(
     private bookService: BookService,
+    private confirm: ConfirmService,
     private toast: ToastService
   ) {}
 
@@ -43,9 +45,15 @@ export class BookListComponent implements OnInit {
     return book.authorsDisplay ?? book.authors.join(', ');
   }
 
-  remove(book: Book): void {
+  async remove(book: Book): Promise<void> {
     // Explicit confirm before a destructive action.
-    if (!confirm(`Delete "${book.title}" (ISBN ${book.isbn})?`)) return;
+    const ok = await this.confirm.ask({
+      title: 'Delete book',
+      message: `Delete "${book.title}" (ISBN ${book.isbn})?`,
+      confirmLabel: 'Delete',
+      danger: true
+    });
+    if (!ok) return;
 
     this.bookService.delete(book.isbn).subscribe({
       next: () => {

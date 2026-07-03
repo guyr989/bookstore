@@ -1,0 +1,27 @@
+@if (confirm.current(); as req) {
+  <div class="backdrop" (click)="close(false)">
+    <div class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="req.title"
+         (click)="$event.stopPropagation()">
+      <h3 [class.danger-title]="req.danger">{{ req.title }}</h3>
+      <p>{{ req.message }}</p>
+
+      @if (req.requireWord) {
+        <label class="type-word">
+          Type <strong>{{ req.requireWord }}</strong> to confirm:
+          <input [(ngModel)]="typed" [placeholder]="req.requireWord"
+                 autocomplete="off" autocapitalize="off" spellcheck="false"
+                 (keydown.enter)="accept()" />
+        </label>
+      }
+
+      <div class="buttons">
+        <button type="button" class="btn" (click)="close(false)">Cancel</button>
+        <button type="button" class="btn" [class.danger]="req.danger"
+                [class.primary]="!req.danger" [disabled]="!canConfirm"
+                (click)="accept()">
+          {{ req.confirmLabel || 'Confirm' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

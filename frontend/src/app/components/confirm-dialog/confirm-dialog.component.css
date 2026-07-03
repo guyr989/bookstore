@@ -1,0 +1,79 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fade-in 0.15s ease-out;
+}
+
+.dialog {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: min(420px, calc(100vw - 2rem));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  animation: pop-in 0.15s ease-out;
+}
+
+.dialog h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.dialog h3.danger-title {
+  color: #c62828;
+}
+
+.dialog p {
+  margin: 0 0 1rem;
+  color: #444;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+.type-word {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.type-word input {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.type-word input:focus {
+  outline: 2px solid #c62828;
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.buttons .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
