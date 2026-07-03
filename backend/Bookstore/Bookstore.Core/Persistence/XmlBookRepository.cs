@@ -12,10 +12,16 @@ namespace Bookstore.Core.Persistence
     public class XmlBookRepository
     {
         private readonly string _path;
+        private readonly FileVersionStore _versions;
 
-        public XmlBookRepository(string path)
+        public XmlBookRepository(string path) : this(path, null) { }
+
+        // With a version store, every successful write snapshots the new
+        // file state so the user can roll back later.
+        public XmlBookRepository(string path, FileVersionStore versions)
         {
             _path = path;
+            _versions = versions;
         }
 
         public IList<Book> GetAll()
@@ -45,7 +51,7 @@ namespace Bookstore.Core.Persistence
                     "A book with ISBN '" + book.Isbn + "' already exists.");
 
             doc.Root.Add(toXml(book));
-            doc.Save(_path);
+            save(doc);
         }
 
         // Returns true if a book with this ISBN existed and was replaced;
@@ -60,7 +66,7 @@ namespace Bookstore.Core.Persistence
             if (el == null) return false;
 
             el.ReplaceWith(toXml(book));
-            doc.Save(_path);
+            save(doc);
             return true;
         }
 
@@ -74,8 +80,16 @@ namespace Bookstore.Core.Persistence
             if (el == null) return false;
 
             el.Remove();
-            doc.Save(_path);
+            save(doc);
             return true;
+        }
+
+        // Persist and, when versioning is enabled, snapshot the new state so
+        // this save shows up in the rollback history.
+        private void save(XDocument doc)
+        {
+            doc.Save(_path);
+            if (_versions != null) _versions.Snapshot();
         }
 
         // Loads the XML file and validates it against the embedded XSD. A file

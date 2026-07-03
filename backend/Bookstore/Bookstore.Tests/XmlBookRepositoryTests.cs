@@ -278,6 +278,63 @@ namespace Bookstore.Tests
             Assert.Throws<ArgumentException>(() => repo.Edit(invalid));
         }
 
+        // ---- Versioning ------------------------------------------------------
+
+        // Versioning tests get their own directory: snapshots are written to a
+        // "versions" folder NEXT TO the data file, which must not leak into the
+        // shared temp dir.
+        private static string versionedXmlPath()
+        {
+            var dir = Path.Combine(Path.GetTempPath(),
+                "bookstore_repo_versions_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "bookstore.xml");
+            File.WriteAllText(path, SampleXml);
+            return path;
+        }
+
+        [Test]
+        public void Add_WithVersionStore_SnapshotsTheNewStateForRollback()
+        {
+            var path = versionedXmlPath();
+            try
+            {
+                var versions = new FileVersionStore(path);
+                var repo = new XmlBookRepository(path, versions);
+
+                repo.Add(ValidBook());
+
+                var list = versions.List();
+                Assert.AreEqual(1, list.Count);
+                Assert.AreEqual(1, list[0].Number);
+            }
+            finally
+            {
+                Directory.Delete(Path.GetDirectoryName(path), recursive: true);
+            }
+        }
+
+        [Test]
+        public void Edit_WhenIsbnNotFound_WithVersionStore_SnapshotsNothing()
+        {
+            var path = versionedXmlPath();
+            try
+            {
+                var versions = new FileVersionStore(path);
+                var repo = new XmlBookRepository(path, versions);
+                var missing = ValidBook();
+                missing.Isbn = "0000000000000";
+
+                repo.Edit(missing);
+
+                Assert.IsEmpty(versions.List());
+            }
+            finally
+            {
+                Directory.Delete(Path.GetDirectoryName(path), recursive: true);
+            }
+        }
+
         [Test]
         public void GetAll_WhenFileViolatesSchema_Throws()
         {

@@ -118,7 +118,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BooksControllerTests.cs" />
+    <Compile Include="FileVersionStoreTests.cs" />
     <Compile Include="ReportsControllerTests.cs" />
+    <Compile Include="VersionsControllerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XmlBookRepositoryTests.cs" />
   </ItemGroup>

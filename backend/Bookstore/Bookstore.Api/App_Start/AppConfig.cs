@@ -35,9 +35,16 @@ namespace Bookstore.Api
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, raw);
         }
 
+        public static FileVersionStore versions()
+        {
+            return new FileVersionStore(xmlPath());
+        }
+
         public static XmlBookRepository repo()
         {
-            return new XmlBookRepository(xmlPath());
+            // Versioned: every successful save through the API is snapshotted
+            // so the owner can roll the file back from the UI.
+            return new XmlBookRepository(xmlPath(), versions());
         }
     }
 }
