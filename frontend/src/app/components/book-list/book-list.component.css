@@ -7,12 +7,6 @@
   align-items: center;
 }
 
-.authors {
-  width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .actions {
   white-space: nowrap;
@@ -26,15 +20,12 @@
 }
 
 @media screen and (max-width: 768px) {
-  .authors {
-    width: auto; /* no fixed desktop width inside the card */
-    text-align: center;
-  }
 
   .actions {
     display: flex;
-    gap: 1em;
-    max-width: 250px;
-    margin: 0 auto;
+    padding: 0;
+    max-width: 450px;
+    margin: 1em auto 0;
+    border: 0;
   }
 }
