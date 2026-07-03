@@ -87,10 +87,22 @@ tr:nth-child(even) {
   /* Make cells (td) flex row wrappers to cleanly line up inline labels */
   table.table-container td {
     display: flex;
-    justify-content: center; /* Pushes the label left and data right */
+    justify-content: space-between; /* Pushes the label left and data right */
     align-items: center;
+    gap: 1rem;
     padding: 12px;
     border-bottom: 1px dashed #f0f0f0; /* Optional separator lines inside the card */
+  }
+
+  /* Field names come from data-label, since the thead is hidden on mobile */
+  table.table-container td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #607d8b;
+  }
+
+  .authors {
+    width: auto; /* let the card decide; no fixed desktop width on mobile */
   }
 
   /* Remove the bottom border for the very last field in the card */

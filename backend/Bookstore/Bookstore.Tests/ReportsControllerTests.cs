@@ -46,6 +46,15 @@ namespace Bookstore.Tests
         }
 
         [Test]
+        public void BooksHtml_ShowsBookCountAndTotalPrice()
+        {
+            var html = _controller.BooksHtml().Content.ReadAsStringAsync().Result;
+
+            StringAssert.Contains("2 books", html);
+            StringAssert.Contains("79.98", html); // 29.99 + 49.99
+        }
+
+        [Test]
         public void BooksHtml_EscapesHtmlInBookFields()
         {
             // A malicious title must render as text, not markup (stored XSS).

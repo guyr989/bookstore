@@ -24,13 +24,13 @@
     <tbody>
       @for (book of books; track book.isbn) {
         <tr>
-          <td class="mono">{{ book.isbn }}</td>
-          <td>{{ book.title }} <span class="muted">({{ book.language }})</span></td>
-          <td><div class="authors">{{ authorsOf(book) }}</div></td>
-          <td>{{ book.category }}</td>
-          <td>{{ book.year }}</td>
-          <td>{{ book.price | number:'1.2-2' }}</td>
-          <td>{{ book.cover || '—' }}</td>
+          <td class="mono" data-label="ISBN">{{ book.isbn }}</td>
+          <td data-label="Title">{{ book.title }} <span class="muted">({{ book.language }})</span></td>
+          <td data-label="Author(s)"><div class="authors">{{ authorsOf(book) }}</div></td>
+          <td data-label="Category">{{ book.category }}</td>
+          <td data-label="Year">{{ book.year }}</td>
+          <td data-label="Price">{{ book.price | number:'1.2-2' }}</td>
+          <td data-label="Cover">{{ book.cover || '—' }}</td>
           <td class="actions">
             <a [routerLink]="['/edit', book.isbn]" class="btn">Edit</a>
             <button type="button" class="btn danger" (click)="remove(book)">Delete</button>

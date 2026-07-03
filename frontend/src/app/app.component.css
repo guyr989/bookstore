@@ -2,9 +2,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: #263238;
   color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .topbar h1 {
   font-size: 1.2rem;
@@ -13,6 +18,13 @@
 .topbar nav {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .topbar nav {
+    gap: 0.25rem;
+  }
 }
 .topbar a {
   color: #cfd8dc;
