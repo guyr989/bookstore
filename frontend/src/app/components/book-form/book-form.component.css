@@ -15,3 +15,9 @@ fieldset { border: 1px solid #ddd; border-radius: 6px;
 .author-row input { flex: 1; }
 
 .row { display: flex; gap: 1rem; }
+
+@media (max-width:768px) {
+    .row{
+        flex-direction: column;
+    }
+}

@@ -1,10 +1,101 @@
-.header { display: flex; justify-content: space-between; align-items: center; }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-th, td { border: 1px solid #ddd; padding: .5rem .75rem; text-align: left; }
-th { background: #f4f4f4; }
-tr:nth-child(even) { background: #fafafa; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+}
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+th {
+  background: #f4f4f4;
+}
+tr:nth-child(even) {
+  background: #fafafa;
+}
 
-.mono { font-family: Consolas, monospace; }
-.muted { color: #777; }
-.actions { white-space: nowrap; }
+.authors {
+  width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mono {
+  font-family: Consolas, monospace;
+}
+.muted {
+  color: #777;
+}
+
+.actions {
+  white-space: nowrap;
+  width: 100%;
+  display: grid;
+  gap: 1em;
+}
+
+.actions .btn {
+  text-align: center;
+}
+
+/* Target screens smaller than 768px (tablets and mobile phones) */
+@media screen and (max-width: 768px) {
+  /* Hide the native table headers completely */
+  table.table-container thead {
+    display: none;
+  }
+
+  /* Turn the container, body, and rows into modern block/flex wrappers */
+  table.table-container,
+  table.table-container tbody {
+    display: block;
+    width: 100%;
+  }
+  .authors {
+    text-align: center;
+  }
+
+  .actions {
+      display: flex;
+      gap: 1em;
+      max-width: 250px;
+      margin: 0 auto;
+    border: 0;
+  }
+  /* Turn each row (tr) into a self-contained CSS Grid card */
+  table.table-container tr {
+    display: grid;
+    grid-template-columns: 1fr; /* Stacks every cell vertically */
+    gap: 8px; /* Adds clean spacing between fields */
+    margin-bottom: 20px; /* Spacing between different book cards */
+    padding: 16px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Make cells (td) flex row wrappers to cleanly line up inline labels */
+  table.table-container td {
+    display: flex;
+    justify-content: center; /* Pushes the label left and data right */
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px dashed #f0f0f0; /* Optional separator lines inside the card */
+  }
+
+  /* Remove the bottom border for the very last field in the card */
+  table.table-container td:last-child {
+    border-bottom: none;
+    justify-content: space-between;
+  }
+}
