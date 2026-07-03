@@ -113,8 +113,7 @@ export class BookFormComponent implements OnInit {
   }
 
   private fill(book: Book): void {
-    this.authors.clear();
-    book.authors.forEach(a => this.authors.push(this.authorControl(a)));
+    this.setAuthors(book.authors);
     this.form.patchValue({
       isbn: book.isbn,
       title: book.title,
@@ -124,6 +123,16 @@ export class BookFormComponent implements OnInit {
       category: book.category,
       cover: book.cover ?? ''
     });
+  }
+
+  // Rebuild the authors FormArray to mirror the book's current authors, one
+  // editable row each (always at least one so the form is never author-less).
+  // The template tracks the @for by control identity, so replacing the controls
+  // here rebinds each input to its new control and shows the loaded name.
+  private setAuthors(authors: readonly string[]): void {
+    const names = authors.length ? authors : [''];
+    this.authors.clear();
+    names.forEach(name => this.authors.push(this.authorControl(name)));
   }
 
   private toBook(): Book {

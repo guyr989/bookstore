@@ -31,7 +31,7 @@
 
   <fieldset formArrayName="authors">
     <legend>Author(s)</legend>
-    @for (ctrl of authors.controls; track $index) {
+    @for (ctrl of authors.controls; track ctrl) {
       <div class="author-row">
         <input [formControlName]="$index" placeholder="Author name"
                [class.bad]="ctrl.invalid && (ctrl.dirty || ctrl.touched)" />
