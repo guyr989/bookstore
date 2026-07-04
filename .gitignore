@@ -22,3 +22,6 @@ Thumbs.db
 
 # ---- Runtime rollback snapshots (created on every save) ----
 backend/Bookstore/Bookstore.Api/App_Data/versions/
+
+# ---- Private review prep notes (not part of the deliverable) ----
+docs/REVIEW_QA.md
