@@ -1,15 +1,15 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Bookstore.Core.Common;
 using Bookstore.Core.Models;
 
 namespace Bookstore.Core.Validation
 {
-    /// <summary>
-    /// Enforces the "no empty / no invalid objects" data-integrity rule before a
-    /// Book is ever written to the XML store. Throws ArgumentException (which the
-    /// API layer maps to HTTP 400) describing the first violation found.
-    /// </summary>
+    // Enforces the "no empty / no invalid objects" data-integrity rule before a
+    // Book is ever written to the XML store. Collects every violation instead
+    // of stopping at the first, so a caller sees the whole problem in one
+    // round trip rather than fixing fields one at a time.
     public static class BookValidator
     {
         // ISBN-13 format only: exactly 13 digits. We deliberately do NOT verify
@@ -17,32 +17,37 @@ namespace Bookstore.Core.Validation
         // checksum-valid, so enforcing it would reject the seed data itself.
         private static readonly Regex Isbn13 = new Regex(@"^\d{13}$");
 
-        public static void Validate(Book book)
+        public static Result Validate(Book book)
         {
             if (book == null)
-                throw new ArgumentNullException(nameof(book));
+                return Result.Fail(ResultError.ValidationFailed,
+                    "Book must not be null (caller error, not user input).");
+
+            var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(book.Isbn) || !Isbn13.IsMatch(book.Isbn))
-                throw new ArgumentException("ISBN must be exactly 13 digits.", nameof(book.Isbn));
+                errors.Add("ISBN must be exactly 13 digits.");
 
             if (string.IsNullOrWhiteSpace(book.Title))
-                throw new ArgumentException("Title is required.", nameof(book.Title));
+                errors.Add("Title is required.");
 
             if (string.IsNullOrWhiteSpace(book.Language))
-                throw new ArgumentException("Language (title lang) is required.", nameof(book.Language));
+                errors.Add("Language (title lang) is required.");
 
             if (book.Authors == null || book.Authors.Count == 0 ||
                 book.Authors.Any(string.IsNullOrWhiteSpace))
-                throw new ArgumentException("At least one non-empty author is required.", nameof(book.Authors));
+                errors.Add("At least one non-empty author is required.");
 
             if (book.Year <= 0)
-                throw new ArgumentException("Year must be a positive number.", nameof(book.Year));
+                errors.Add("Year must be a positive number.");
 
             if (book.Price < 0)
-                throw new ArgumentException("Price cannot be negative.", nameof(book.Price));
+                errors.Add("Price cannot be negative.");
 
             if (string.IsNullOrWhiteSpace(book.Category))
-                throw new ArgumentException("Category is required.", nameof(book.Category));
+                errors.Add("Category is required.");
+
+            return errors.Count == 0 ? Result.Ok() : Result.Fail(ResultError.ValidationFailed, errors);
         }
     }
 }

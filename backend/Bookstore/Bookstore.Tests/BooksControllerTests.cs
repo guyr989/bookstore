@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Web.Http.Results;
 using NUnit.Framework;
 using Bookstore.Api.Controllers;
+using Bookstore.Api.Http;
 using Bookstore.Core.Models;
 using Bookstore.Core.Persistence;
 
@@ -71,7 +73,10 @@ namespace Bookstore.Tests
         [Test]
         public void Get_UnknownIsbn_Returns404()
         {
-            Assert.IsInstanceOf<NotFoundResult>(_controller.Get("0000000000000"));
+            var result = _controller.Get("0000000000000") as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.NotFound, result.StatusCode);
         }
 
         // ---- POST -----------------------------------------------------------
@@ -83,8 +88,8 @@ namespace Bookstore.Tests
 
             Assert.IsInstanceOf<CreatedNegotiatedContentResult<Book>>(result);
             var saved = new XmlBookRepository(_xmlPath).GetByIsbn("9781111111111");
-            Assert.IsNotNull(saved);
-            Assert.AreEqual("A Valid Book", saved.Title);
+            Assert.IsTrue(saved.Success);
+            Assert.AreEqual("A Valid Book", saved.Value.Title);
         }
 
         [Test]
@@ -93,7 +98,29 @@ namespace Bookstore.Tests
             var invalid = validBook();
             invalid.Title = "";
 
-            Assert.IsInstanceOf<BadRequestErrorMessageResult>(_controller.Post(invalid));
+            var result = _controller.Post(invalid) as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.BadRequest, result.StatusCode);
+            StringAssert.Contains("Title is required.", result.Content.Message);
+        }
+
+        [Test]
+        public void Post_WithMultipleInvalidFields_ReturnsEachErrorSeparately()
+        {
+            var invalid = validBook();
+            invalid.Title = "";
+            invalid.Price = -1m;
+
+            var result = _controller.Post(invalid) as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.AreEqual(2, result.Content.Errors.Count);
+            CollectionAssert.Contains(result.Content.Errors, "Title is required.");
+            CollectionAssert.Contains(result.Content.Errors, "Price cannot be negative.");
+            StringAssert.Contains("Title is required.", result.Content.Message);
+            StringAssert.Contains("Price cannot be negative.", result.Content.Message);
         }
 
         [Test]
@@ -108,10 +135,10 @@ namespace Bookstore.Tests
             var dup = validBook();
             dup.Isbn = "9051234567897"; // seed book
 
-            var result = _controller.Post(dup) as NegotiatedContentResult<string>;
+            var result = _controller.Post(dup) as NegotiatedContentResult<ApiError>;
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(System.Net.HttpStatusCode.Conflict, result.StatusCode);
+            Assert.AreEqual(HttpStatusCode.Conflict, result.StatusCode);
         }
 
         // ---- PUT ------------------------------------------------------------
@@ -126,14 +153,17 @@ namespace Bookstore.Tests
 
             Assert.IsInstanceOf<OkNegotiatedContentResult<Book>>(result);
             var saved = new XmlBookRepository(_xmlPath).GetByIsbn("9051234567897");
-            Assert.AreEqual("Harry Potter (Revised)", saved.Title);
+            Assert.AreEqual("Harry Potter (Revised)", saved.Value.Title);
         }
 
         [Test]
         public void Put_UnknownIsbn_Returns404()
         {
-            Assert.IsInstanceOf<NotFoundResult>(
-                _controller.Put("0000000000000", validBook()));
+            var result = _controller.Put("0000000000000", validBook())
+                as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.NotFound, result.StatusCode);
         }
 
         [Test]
@@ -142,8 +172,11 @@ namespace Bookstore.Tests
             var invalid = validBook();
             invalid.Category = " ";
 
-            Assert.IsInstanceOf<BadRequestErrorMessageResult>(
-                _controller.Put("9051234567897", invalid));
+            var result = _controller.Put("9051234567897", invalid)
+                as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.BadRequest, result.StatusCode);
         }
 
         // ---- DELETE ---------------------------------------------------------
@@ -154,14 +187,18 @@ namespace Bookstore.Tests
             var result = _controller.Delete("9051234567897") as StatusCodeResult;
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(System.Net.HttpStatusCode.NoContent, result.StatusCode);
+            Assert.AreEqual(HttpStatusCode.NoContent, result.StatusCode);
             Assert.AreEqual(2, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         [Test]
         public void Delete_UnknownIsbn_Returns404()
         {
-            Assert.IsInstanceOf<NotFoundResult>(_controller.Delete("0000000000000"));
+            var result = _controller.Delete("0000000000000")
+                as NegotiatedContentResult<ApiError>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(HttpStatusCode.NotFound, result.StatusCode);
         }
 
         private const string SampleXml = @"<?xml version=""1.0"" encoding=""utf-8""?>

@@ -85,6 +85,9 @@
     <Compile Include="Controllers\BooksController.cs" />
     <Compile Include="Controllers\ReportsController.cs" />
     <Compile Include="Controllers\VersionsController.cs" />
+    <Compile Include="Http\ApiError.cs" />
+    <Compile Include="Http\GlobalExceptionHandler.cs" />
+    <Compile Include="Http\ResultResponses.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

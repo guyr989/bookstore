@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Schema;
 using NUnit.Framework;
+using Bookstore.Core.Common;
 using Bookstore.Core.Models;
 using Bookstore.Core.Persistence;
 
@@ -36,7 +37,7 @@ namespace Bookstore.Tests
         {
             var repo = new XmlBookRepository(_xmlPath);
 
-            var book = repo.GetByIsbn("9031234567897");
+            var book = repo.GetByIsbn("9031234567897").Value;
 
             Assert.AreEqual(5, book.Authors.Count);
             Assert.AreEqual(
@@ -63,7 +64,7 @@ namespace Bookstore.Tests
                 Cover    = "hardcover"
             };
 
-            repo.Add(bookWithCoverAndMultipleAuthors);
+            Assert.IsTrue(repo.Add(bookWithCoverAndMultipleAuthors).Success);
 
             var freshRepo = new XmlBookRepository(_xmlPath);
             var reloaded = freshRepo.GetAll().Single(b => b.Isbn == "9781234567890");
@@ -81,7 +82,7 @@ namespace Bookstore.Tests
         public void GetByIsbn_ReturnsCorrectBook()
         {
             var repo = new XmlBookRepository(_xmlPath);
-            var book = repo.GetByIsbn("9051234567897");
+            var book = repo.GetByIsbn("9051234567897").Value;
             Assert.AreEqual("Harry Potter", book.Title);
             Assert.AreEqual("children", book.Category);
             Assert.AreEqual("J K. Rowling", book.AuthorsDisplay);
@@ -91,11 +92,11 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void Edit_ReplacesAllFields_AndReturnsTrue()
+        public void Edit_ReplacesAllFields_AndReturnsSuccess()
         {
             var repo = new XmlBookRepository(_xmlPath);
 
-            var edited = repo.Edit(new Book
+            var result = repo.Edit(new Book
             {
                 Isbn     = "9051234567897",
                 Title    = "Harry Potter and the Philosopher's Stone",
@@ -107,9 +108,9 @@ namespace Bookstore.Tests
                 Cover    = "hardcover"
             });
 
-            Assert.IsTrue(edited);
+            Assert.IsTrue(result.Success);
 
-            var reloaded = new XmlBookRepository(_xmlPath).GetByIsbn("9051234567897");
+            var reloaded = new XmlBookRepository(_xmlPath).GetByIsbn("9051234567897").Value;
             Assert.AreEqual("Harry Potter and the Philosopher's Stone", reloaded.Title);
             Assert.AreEqual("en", reloaded.Language);
             Assert.AreEqual(2, reloaded.Authors.Count);
@@ -121,7 +122,7 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
+        public void Edit_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var originalBookCount = repo.GetAll().Count;
@@ -136,9 +137,10 @@ namespace Bookstore.Tests
                 Category = "web"
             };
 
-            var edited = repo.Edit(missing);
+            var result = repo.Edit(missing);
 
-            Assert.IsFalse(edited);
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.NotFound, result.Error);
             Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
@@ -159,8 +161,20 @@ namespace Bookstore.Tests
 
             var found = repo.GetByIsbn("9781234567890");
 
-            Assert.IsNotNull(found);
-            Assert.AreEqual("Clean Architecture", found.Title);
+            Assert.IsTrue(found.Success);
+            Assert.AreEqual("Clean Architecture", found.Value.Title);
+        }
+
+        [Test]
+        public void GetByIsbn_WhenIsbnNotFound_ReturnsNotFoundWithNoValue()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+
+            var result = repo.GetByIsbn("0000000000000");
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.NotFound, result.Error);
+            Assert.IsNull(result.Value);
         }
 
         [Test]
@@ -168,9 +182,9 @@ namespace Bookstore.Tests
         {
             var repo = new XmlBookRepository(_xmlPath);
 
-            var removed = repo.Delete("9051234567897");
+            var result = repo.Delete("9051234567897");
 
-            Assert.IsTrue(removed);
+            Assert.IsTrue(result.Success);
             var all = new XmlBookRepository(_xmlPath).GetAll();
             Assert.AreEqual(2, all.Count);
             Assert.IsNull(all.SingleOrDefault(b => b.Isbn == "9051234567897"));
@@ -178,14 +192,15 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void Delete_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
+        public void Delete_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var originalBookCount = repo.GetAll().Count;
 
-            var removed = repo.Delete("0000000000000");
+            var result = repo.Delete("0000000000000");
 
-            Assert.IsFalse(removed);
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.NotFound, result.Error);
             Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
@@ -208,59 +223,89 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void Add_WithBlankTitle_ThrowsAndWritesNothing()
+        public void Add_WithBlankTitle_ReturnsValidationFailureAndWritesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
+            var originalBookCount = repo.GetAll().Count;
             var invalid = ValidBook();
             invalid.Title = "   ";
 
-            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
-            // File untouched: still the original 3 books.
-            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
+            var result = repo.Add(invalid);
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.ValidationFailed, result.Error);
+            Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         [Test]
-        public void Add_WithNonThirteenDigitIsbn_Throws()
+        public void Add_WithNonThirteenDigitIsbn_ReturnsValidationFailure()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var invalid = ValidBook();
             invalid.Isbn = "123";
 
-            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
+            var result = repo.Add(invalid);
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.ValidationFailed, result.Error);
         }
 
         [Test]
-        public void Add_WithNoAuthors_Throws()
+        public void Add_WithNoAuthors_ReturnsValidationFailure()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var invalid = ValidBook();
             invalid.Authors = new List<string>();
 
-            Assert.Throws<ArgumentException>(() => repo.Add(invalid));
+            var result = repo.Add(invalid);
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.ValidationFailed, result.Error);
         }
 
         [Test]
-        public void Add_DuplicateIsbn_ThrowsAndDoesNotDuplicate()
+        public void Add_DuplicateIsbn_ReturnsConflictAndDoesNotDuplicate()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var dup = ValidBook();
             dup.Isbn = "9051234567897"; // already in the seed (Harry Potter)
 
-            Assert.Throws<InvalidOperationException>(() => repo.Add(dup));
-            // Still exactly one book with that ISBN.
+            var result = repo.Add(dup);
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.Conflict, result.Error);
             Assert.AreEqual(1,
                 new XmlBookRepository(_xmlPath).GetAll().Count(b => b.Isbn == "9051234567897"));
         }
 
         [Test]
-        public void Edit_WithInvalidBook_Throws()
+        public void Add_WithMultipleInvalidFields_ReportsEveryViolation()
+        {
+            var repo = new XmlBookRepository(_xmlPath);
+            var invalid = ValidBook();
+            invalid.Title = "   ";
+            invalid.Price = -5m;
+
+            var result = repo.Add(invalid);
+
+            Assert.AreEqual(ResultError.ValidationFailed, result.Error);
+            Assert.AreEqual(2, result.Errors.Count);
+            CollectionAssert.Contains(result.Errors, "Title is required.");
+            CollectionAssert.Contains(result.Errors, "Price cannot be negative.");
+        }
+
+        [Test]
+        public void Edit_WithInvalidBook_ReturnsValidationFailure()
         {
             var repo = new XmlBookRepository(_xmlPath);
             var invalid = ValidBook();
             invalid.Isbn = "9051234567897"; // exists, so it would otherwise edit
             invalid.Category = "";           // but this is invalid
 
-            Assert.Throws<ArgumentException>(() => repo.Edit(invalid));
+            var result = repo.Edit(invalid);
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(ResultError.ValidationFailed, result.Error);
         }
 
         // ---- Versioning ------------------------------------------------------
@@ -287,7 +332,7 @@ namespace Bookstore.Tests
                 var versions = new FileVersionStore(path);
                 var repo = new XmlBookRepository(path, versions);
 
-                repo.Add(ValidBook());
+                Assert.IsTrue(repo.Add(ValidBook()).Success);
 
                 var list = versions.List();
                 Assert.AreEqual(1, list.Count);
@@ -310,7 +355,7 @@ namespace Bookstore.Tests
                 var versions = new FileVersionStore(path);
                 var repo = new XmlBookRepository(path, versions);
 
-                repo.Add(ValidBook()); // catalog goes 3 -> 4 books
+                Assert.IsTrue(repo.Add(ValidBook()).Success); // catalog goes 3 -> 4 books
 
                 versions.Restore(1);   // undo it
 
@@ -333,8 +378,9 @@ namespace Bookstore.Tests
                 var missing = ValidBook();
                 missing.Isbn = "0000000000000";
 
-                repo.Edit(missing);
+                var result = repo.Edit(missing);
 
+                Assert.AreEqual(ResultError.NotFound, result.Error);
                 Assert.IsEmpty(versions.List());
             }
             finally

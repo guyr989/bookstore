@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using Bookstore.Core.Common;
 using Bookstore.Core.Models;
 using Bookstore.Core.Validation;
 
@@ -32,56 +32,60 @@ namespace Bookstore.Core.Persistence
                             .ToList();
         }
 
-        public Book GetByIsbn(string isbn)
+        public Result<Book> GetByIsbn(string isbn)
         {
-            if (string.IsNullOrWhiteSpace(isbn)) return null;
+            if (string.IsNullOrWhiteSpace(isbn))
+                return Result<Book>.Fail(ResultError.NotFound, noBookMessage(isbn));
 
             var el = findBook(loadDoc(), isbn);
-            return el != null ? toBook(el) : null;
+            return el != null
+                ? Result<Book>.Ok(toBook(el))
+                : Result<Book>.Fail(ResultError.NotFound, noBookMessage(isbn));
         }
 
-        public void Add(Book book)
+        public Result Add(Book book)
         {
-            BookValidator.Validate(book);
+            var validation = BookValidator.Validate(book);
+            if (!validation.Success) return validation;
 
             var doc = loadDoc();
 
             if (findBook(doc, book.Isbn) != null)
-                throw new InvalidOperationException(
+                return Result.Fail(ResultError.Conflict,
                     "A book with ISBN '" + book.Isbn + "' already exists.");
 
             doc.Root.Add(toXml(book));
             save(doc);
+            return Result.Ok();
         }
 
-        // Returns true if a book with this ISBN existed and was replaced;
-        // false if no such book was found (a normal, non-exceptional outcome).
-        public bool Edit(Book book)
+        public Result Edit(Book book)
         {
-            BookValidator.Validate(book);
+            var validation = BookValidator.Validate(book);
+            if (!validation.Success) return validation;
 
             var doc = loadDoc();
             var el = findBook(doc, book.Isbn);
 
-            if (el == null) return false;
+            if (el == null)
+                return Result.Fail(ResultError.NotFound, noBookMessage(book.Isbn));
 
             el.ReplaceWith(toXml(book));
             save(doc);
-            return true;
+            return Result.Ok();
         }
 
-        // Returns true if a book with this ISBN existed and was removed;
-        // false if no such book was found.
-        public bool Delete(string isbn)
+        public Result Delete(string isbn)
         {
             var doc = loadDoc();
             var el = findBook(doc, isbn);
 
-            if (el == null) return false;
+            if (el == null)
+                return Result.Fail(ResultError.NotFound, noBookMessage(isbn));
 
             el.Remove();
             save(doc);
-            return true;
+            return Result.Ok();
         }
 
         // When versioning is enabled, stash the state being REPLACED before
@@ -104,6 +108,11 @@ namespace Bookstore.Core.Persistence
             var doc = XDocument.Load(_path);
             doc.Validate(BookstoreSchema.SchemaSet, (sender, e) => { throw e.Exception; });
             return doc;
+        }
+
+        private static string noBookMessage(string isbn)
+        {
+            return "No book found with ISBN '" + isbn + "'.";
         }
 
         private static XElement findBook(XDocument doc, string isbn)

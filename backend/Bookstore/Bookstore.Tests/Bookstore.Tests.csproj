@@ -119,6 +119,7 @@
   <ItemGroup>
     <Compile Include="BooksControllerTests.cs" />
     <Compile Include="FileVersionStoreTests.cs" />
+    <Compile Include="GlobalExceptionHandlerTests.cs" />
     <Compile Include="ReportsControllerTests.cs" />
     <Compile Include="VersionsControllerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
