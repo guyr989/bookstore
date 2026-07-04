@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../services/toast.service';
 import { BookFormComponent, sanitize } from './book-form.component';
 
 describe('sanitize (input purification)', () => {
@@ -68,6 +69,68 @@ describe('BookFormComponent (validation)', () => {
     const form = createForm();
     form.get('price')!.setValue(-1);
     expect(form.get('price')!.valid).toBeFalse();
+  });
+});
+
+describe('BookFormComponent (save error handling)', () => {
+  let http: HttpTestingController;
+  let toastErrors: string[];
+
+  beforeEach(async () => {
+    toastErrors = [];
+    await TestBed.configureTestingModule({
+      imports: [BookFormComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
+    }).compileComponents();
+    http = TestBed.inject(HttpTestingController);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error').and.callFake((msg: string) => { toastErrors.push(msg); });
+  });
+
+  afterEach(() => http.verify());
+
+  function saveValidBook() {
+    const fixture = TestBed.createComponent(BookFormComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.form.patchValue({
+      isbn: '9781234567890',
+      title: 'Clean Architecture',
+      language: 'en',
+      year: 2017,
+      price: 32.5,
+      category: 'software'
+    });
+    (component.form.get('authors') as any).at(0).setValue('Robert C. Martin');
+    component.save();
+    return http.expectOne(`${environment.apiUrl}/books`);
+  }
+
+  it('shows one toast per violation when the 400 body carries an errors array', () => {
+    saveValidBook().flush(
+      {
+        message: 'Title is required. Price cannot be negative.',
+        errors: ['Title is required.', 'Price cannot be negative.']
+      },
+      { status: 400, statusText: 'Bad Request' });
+
+    expect(toastErrors).toEqual(['Title is required.', 'Price cannot be negative.']);
+  });
+
+  it('falls back to the joined message when the 400 body has no errors array', () => {
+    saveValidBook().flush(
+      { message: 'invalid book' },
+      { status: 400, statusText: 'Bad Request' });
+
+    expect(toastErrors).toEqual(['The server rejected the book: invalid book']);
+  });
+
+  it('reports a duplicate ISBN as a single conflict toast', () => {
+    saveValidBook().flush(
+      { message: "A book with ISBN '9781234567890' already exists." },
+      { status: 409, statusText: 'Conflict' });
+
+    expect(toastErrors).toEqual(['A book with this ISBN already exists.']);
   });
 });
 

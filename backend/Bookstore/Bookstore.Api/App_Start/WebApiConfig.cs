@@ -1,5 +1,7 @@
 using System.Web.Http;
 using System.Web.Http.Cors;
+using System.Web.Http.ExceptionHandling;
+using Bookstore.Api.Http;
 using Newtonsoft.Json.Serialization;
 
 namespace Bookstore.Api
@@ -13,6 +15,9 @@ namespace Bookstore.Api
                 origins: "http://localhost:4200",
                 headers: "*",
                 methods: "*"));
+
+            // Uncaught exceptions become a clean 500 with a safe message.
+            config.Services.Replace(typeof(IExceptionHandler), new GlobalExceptionHandler());
 
             // camelCase JSON (isbn, authorsDisplay, ...) — the JS-side convention.
             config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =

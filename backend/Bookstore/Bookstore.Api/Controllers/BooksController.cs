@@ -1,5 +1,6 @@
-using System;
+using System.Net;
 using System.Web.Http;
+using Bookstore.Api.Http;
 using Bookstore.Core.Models;
 using Bookstore.Core.Persistence;
 
@@ -30,9 +31,9 @@ namespace Bookstore.Api.Controllers
         [HttpGet, Route("{isbn}")]
         public IHttpActionResult Get(string isbn)
         {
-            var book = _repo.GetByIsbn(isbn);
-            if (book == null) return NotFound();
-            return Ok(book);
+            var result = _repo.GetByIsbn(isbn);
+            if (!result.Success) return this.ToErrorResponse(result);
+            return Ok(result.Value);
         }
 
         // POST api/books
@@ -41,18 +42,8 @@ namespace Bookstore.Api.Controllers
         {
             if (book == null) return BadRequest("Request body must contain a book.");
 
-            try
-            {
-                _repo.Add(book);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);            // invalid/empty book -> 400
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);              // duplicate ISBN -> 409
-            }
+            var result = _repo.Add(book);
+            if (!result.Success) return this.ToErrorResponse(result);
 
             return Created("api/books/" + book.Isbn, book);
         }
@@ -64,14 +55,8 @@ namespace Bookstore.Api.Controllers
             if (book == null) return BadRequest("Request body must contain a book.");
             book.Isbn = isbn;                             // the URL is the identity
 
-            try
-            {
-                if (!_repo.Edit(book)) return NotFound();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = _repo.Edit(book);
+            if (!result.Success) return this.ToErrorResponse(result);
 
             return Ok(book);
         }
@@ -80,13 +65,10 @@ namespace Bookstore.Api.Controllers
         [HttpDelete, Route("{isbn}")]
         public IHttpActionResult Delete(string isbn)
         {
-            if (!_repo.Delete(isbn)) return NotFound();
-            return StatusCode(System.Net.HttpStatusCode.NoContent);
-        }
+            var result = _repo.Delete(isbn);
+            if (!result.Success) return this.ToErrorResponse(result);
 
-        private IHttpActionResult Conflict(string message)
-        {
-            return Content(System.Net.HttpStatusCode.Conflict, message);
+            return StatusCode(HttpStatusCode.NoContent);
         }
     }
 }
