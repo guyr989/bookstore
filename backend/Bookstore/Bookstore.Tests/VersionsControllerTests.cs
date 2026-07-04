@@ -68,6 +68,24 @@ namespace Bookstore.Tests
         }
 
         [Test]
+        public void Restore_WhenSnapshotIsCorrupted_Returns409AndLeavesDataFileUntouched()
+        {
+            File.WriteAllText(_dataPath, "<bookstore><!-- live --></bookstore>");
+            _store.Snapshot();
+            // Corrupt v1 on disk (book missing category, isbn not 13 digits):
+            // the store throws, the controller must map that to a safe 409
+            // rather than let it corrupt the live catalog or leak a 500.
+            File.WriteAllText(Path.Combine(_dir, "versions", "bookstore.v0001.xml"),
+                "<bookstore><book><isbn>123</isbn></book></bookstore>");
+
+            var result = _controller.Restore(1) as NegotiatedContentResult<string>;
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(System.Net.HttpStatusCode.Conflict, result.StatusCode);
+            Assert.AreEqual("<bookstore><!-- live --></bookstore>", File.ReadAllText(_dataPath));
+        }
+
+        [Test]
         public void Delete_WhenVersionExists_Returns204()
         {
             _store.Snapshot();

@@ -184,11 +184,16 @@ namespace Bookstore.Tests
         [Test]
         public void Delete_KnownIsbn_Returns204AndRemoves()
         {
+            var originalCount = new XmlBookRepository(_xmlPath).GetAll().Count;
+
             var result = _controller.Delete("9051234567897") as StatusCodeResult;
 
             Assert.IsNotNull(result);
             Assert.AreEqual(HttpStatusCode.NoContent, result.StatusCode);
-            Assert.AreEqual(2, new XmlBookRepository(_xmlPath).GetAll().Count);
+            var remaining = new XmlBookRepository(_xmlPath).GetAll();
+            Assert.AreEqual(originalCount - 1, remaining.Count);
+            Assert.IsFalse(remaining.Any(b => b.Isbn == "9051234567897"),
+                "the deleted book must be gone, not merely some book");
         }
 
         [Test]
