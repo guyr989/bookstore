@@ -145,8 +145,6 @@ namespace Bookstore.Tests
         [Test]
         public void GetByIsbn_OnSameInstance_SeesBookAddedThroughThatInstance()
         {
-            // Regression guard: GetByIsbn must read the file, not a stale snapshot.
-            // Using ONE repo across Add-then-GetByIsbn would fail if a cache went stale.
             var repo = new XmlBookRepository(_xmlPath);
             repo.Add(new Book
             {
