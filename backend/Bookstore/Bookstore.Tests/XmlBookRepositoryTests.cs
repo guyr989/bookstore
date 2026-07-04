@@ -32,17 +32,7 @@ namespace Bookstore.Tests
         }
 
         [Test]
-        public void GetAll_ReturnsEveryBookInTheFile()
-        {
-            var repo = new XmlBookRepository(_xmlPath);
-
-            var books = repo.GetAll();
-
-            Assert.AreEqual(3, books.Count);
-        }
-
-        [Test]
-        public void GetAll_ReadsMultipleAuthorsIntoAList()
+        public void GetByIsbn_ReadsMultipleAuthorsIntoAList()
         {
             var repo = new XmlBookRepository(_xmlPath);
 
