@@ -93,7 +93,14 @@ export class BookFormComponent implements OnInit {
         if (err.status === 409) {
           this.toast.error('A book with this ISBN already exists.');
         } else if (err.status === 400) {
-          this.toast.error('The server rejected the book: ' + (err.error?.message ?? 'invalid data.'));
+          // The API reports every violation at once ({ errors: [...] });
+          // one toast per violation so none hides behind another.
+          const errors: string[] = err.error?.errors ?? [];
+          if (errors.length > 0) {
+            errors.forEach(e => this.toast.error(e));
+          } else {
+            this.toast.error('The server rejected the book: ' + (err.error?.message ?? 'invalid data.'));
+          }
         } else if (err.status === 404) {
           this.toast.error('Book not found.');
         } else {
