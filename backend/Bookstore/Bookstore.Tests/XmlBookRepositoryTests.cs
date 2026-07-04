@@ -172,7 +172,6 @@ namespace Bookstore.Tests
 
             Assert.IsTrue(removed);
             var all = new XmlBookRepository(_xmlPath).GetAll();
-            // Exactly one gone: target absent, the other two survive.
             Assert.AreEqual(2, all.Count);
             Assert.IsNull(all.SingleOrDefault(b => b.Isbn == "9051234567897"));
             Assert.IsNotNull(all.SingleOrDefault(b => b.Isbn == "9031234567897"));
@@ -182,11 +181,12 @@ namespace Bookstore.Tests
         public void Delete_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
+            var originalBookCount = repo.GetAll().Count;
 
             var removed = repo.Delete("0000000000000");
 
             Assert.IsFalse(removed);
-            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
+            Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         // ---- Data integrity (Step 13) ---------------------------------------

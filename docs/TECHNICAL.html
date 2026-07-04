@@ -132,6 +132,14 @@
         <td><code>ArgumentException</code> from validation failures</td>
         <td><code>Edit_ReplacesAllFields_AndReturnsTrue</code>, <code>Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing</code></td>
       </tr>
+      <tr>
+        <td><code>Delete</code></td>
+        <td>in: <code>string isbn</code> &rarr; out: <code>bool</code></td>
+        <td>Removes the <code>&lt;book&gt;</code> matching the given ISBN and saves, returning <code>true</code>. Returns <code>false</code> without writing anything if no book with that ISBN is found.</td>
+        <td><code>FileVersionStore</code> (optional, snapshots the new state)</td>
+        <td>&mdash;</td>
+        <td><code>Delete_RemovesOnlyTheTargetBook</code>, <code>Delete_WhenIsbnNotFound_ReturnsFalseAndChangesNothing</code></td>
+      </tr>
     </tbody>
   </table>
 </section>
