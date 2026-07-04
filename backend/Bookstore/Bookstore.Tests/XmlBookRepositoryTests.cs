@@ -51,7 +51,7 @@ namespace Bookstore.Tests
             // Arrange: a brand-new book, including the optional cover attribute
             // and multiple authors, so Add must serialize every field.
             var repo = new XmlBookRepository(_xmlPath);
-            var newBook = new Book
+            var bookWithCoverAndMultipleAuthors = new Book
             {
                 Isbn     = "9781234567890",
                 Title    = "Clean Architecture",
@@ -63,14 +63,11 @@ namespace Bookstore.Tests
                 Cover    = "hardcover"
             };
 
-            // Act: write it, then re-read from a *fresh* repo on the same file.
-            repo.Add(newBook);
+            repo.Add(bookWithCoverAndMultipleAuthors);
 
-            var reloaded = new XmlBookRepository(_xmlPath)
-                .GetAll()
-                .Single(b => b.Isbn == "9781234567890");
+            var freshRepo = new XmlBookRepository(_xmlPath);
+            var reloaded = freshRepo.GetAll().Single(b => b.Isbn == "9781234567890");
 
-            // Assert: every field survived the round-trip to disk and back.
             Assert.AreEqual("Clean Architecture", reloaded.Title);
             Assert.AreEqual("en", reloaded.Language);
             Assert.AreEqual(2, reloaded.Authors.Count);

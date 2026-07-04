@@ -87,9 +87,11 @@
 
 <h1>Bookstore — Technical Reference</h1>
 <p class="intro">
-  Built incrementally during a guided, method-by-method review. Only methods
-  whose covering test scored 8+ get a row — weaker tests are dropped from the
-  suite entirely rather than documented.
+  Built incrementally during a guided review, one core method paired with its
+  covering test(s) at a time. Only methods whose covering test scored 8+ get a
+  row — weaker tests are dropped from the suite entirely rather than
+  documented. The "Covering Test(s)" column names the test(s) that earned the
+  method its row.
 </p>
 
 <nav class="toc">
@@ -103,7 +105,7 @@
   <h2>XmlBookRepository</h2>
   <table>
     <thead>
-      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th></tr>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
     </thead>
     <tbody>
       <tr>
@@ -112,6 +114,15 @@
         <td>Finds one book by ISBN; joins its <code>&lt;author&gt;</code> elements into <code>Authors</code> and the comma-separated <code>AuthorsDisplay</code> string.</td>
         <td><code>BookstoreSchema</code> (validates file on load)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
+        <td><code>GetByIsbn_ReadsMultipleAuthorsIntoAList</code></td>
+      </tr>
+      <tr>
+        <td><code>Add</code></td>
+        <td>in: <code>Book book</code> &rarr; out: <code>void</code></td>
+        <td>Validates the book, then appends it as a new <code>&lt;book&gt;</code> element and saves &mdash; serializing every field, including the optional <code>cover</code> attribute and multiple <code>&lt;author&gt;</code> elements.</td>
+        <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
+        <td><code>ArgumentException</code> from validation failures; <code>InvalidOperationException</code> if a book with the same ISBN already exists</td>
+        <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code></td>
       </tr>
     </tbody>
   </table>
