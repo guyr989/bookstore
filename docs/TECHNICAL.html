@@ -98,6 +98,7 @@
   <h2>Contents</h2>
   <ul>
     <li><a href="#xmlbookrepository">XmlBookRepository</a></li>
+    <li><a href="#fileversionstore">FileVersionStore</a></li>
     <li><a href="#error-handling">Error Handling (Result &amp; HTTP mapping)</a></li>
   </ul>
 </nav>
@@ -148,6 +149,49 @@
         <td><code>FileVersionStore</code> (optional, snapshots the new state)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
         <td><code>Delete_RemovesOnlyTheTargetBook</code>, <code>Delete_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="fileversionstore">
+  <h2>FileVersionStore</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>List</code></td>
+        <td>in: &mdash; &rarr; out: <code>IList&lt;FileVersion&gt;</code></td>
+        <td>Version numbers and timestamps currently on disk, ascending. Parses file names strictly (only exact <code>bookstore.vNNNN.xml</code> matches count), filtering editor/backup litter that <code>Directory.GetFiles</code>' 3-char-extension quirk would otherwise sweep in.</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>List_WhenNothingSnapshotted_IsEmpty</code>, <code>Snapshot_CreatesNumberedVersionsStartingAtOne</code>, <code>List_IgnoresFilesThatOnlyResembleVersions</code></td>
+      </tr>
+      <tr>
+        <td><code>Snapshot</code></td>
+        <td>in: &mdash; &rarr; out: <code>FileVersion</code></td>
+        <td>Copies the current data file into the next numbered slot (highest remaining + 1 &mdash; numbers are never reused) and stamps it with the moment it was taken, not the file's write time. Prunes oldest-first beyond 100 kept versions. All mutations serialize on one process-wide gate so concurrent saves cannot claim the same number.</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>Snapshot_CreatesNumberedVersionsStartingAtOne</code>, <code>Snapshot_CopiesTheCurrentFileContent</code>, <code>Snapshot_StampsTheTimeItWasTaken_NotTheDataFilesWriteTime</code>, <code>Snapshot_NumbersContinueFromTheHighestRemainingVersion</code></td>
+      </tr>
+      <tr>
+        <td><code>Restore</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>bool</code></td>
+        <td>Copies the version back over the data file, returning <code>false</code> if it does not exist. Validates the snapshot against the XSD first (never rolls the live catalog back to a corrupted file) and stashes the current state before overwriting, so a restore is itself undoable &mdash; unless the data file is already gone, in which case restoring is the recovery path.</td>
+        <td><code>BookstoreSchema</code> (validates the snapshot)</td>
+        <td><code>XmlSchemaValidationException</code> if the snapshot fails schema validation</td>
+        <td><code>Restore_CopiesTheVersionBackOverTheDataFile</code>, <code>Restore_SnapshotsTheCurrentStateFirst_SoARestoreIsUndoable</code>, <code>Restore_WhenVersionMissing_ReturnsFalseAndChangesNothing</code>, <code>Restore_WhenDataFileIsMissing_StillRestoresTheVersion</code>, <code>Restore_WhenSnapshotIsCorrupted_ThrowsAndChangesNothing</code></td>
+      </tr>
+      <tr>
+        <td><code>Delete</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>bool</code></td>
+        <td>Removes that version's file, returning <code>false</code> if it does not exist. Remaining numbers are untouched (no renumbering).</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>Delete_RemovesOnlyThatVersion</code>, <code>Delete_WhenVersionMissing_ReturnsFalse</code></td>
       </tr>
     </tbody>
   </table>
