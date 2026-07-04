@@ -130,7 +130,7 @@
         <td>Validates the book; if a book with the same ISBN exists, replaces it entirely (all fields) and saves, returning <code>true</code>. Returns <code>false</code> without writing anything if no book with that ISBN is found.</td>
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
         <td><code>ArgumentException</code> from validation failures</td>
-        <td><code>Edit_ReplacesAllFields_AndReturnsTrue</code></td>
+        <td><code>Edit_ReplacesAllFields_AndReturnsTrue</code>, <code>Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing</code></td>
       </tr>
     </tbody>
   </table>

@@ -124,6 +124,7 @@ namespace Bookstore.Tests
         public void Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing()
         {
             var repo = new XmlBookRepository(_xmlPath);
+            var originalBookCount = repo.GetAll().Count;
             var missing = new Book
             {
                 Isbn     = "0000000000000",
@@ -138,8 +139,7 @@ namespace Bookstore.Tests
             var edited = repo.Edit(missing);
 
             Assert.IsFalse(edited);
-            // File untouched: still the original 3 books, no ghost added.
-            Assert.AreEqual(3, new XmlBookRepository(_xmlPath).GetAll().Count);
+            Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
         [Test]
