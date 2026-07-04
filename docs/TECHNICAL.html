@@ -98,6 +98,7 @@
   <h2>Contents</h2>
   <ul>
     <li><a href="#xmlbookrepository">XmlBookRepository</a></li>
+    <li><a href="#error-handling">Error Handling (Result &amp; HTTP mapping)</a></li>
   </ul>
 </nav>
 
@@ -110,35 +111,78 @@
     <tbody>
       <tr>
         <td><code>GetByIsbn</code></td>
-        <td>in: <code>string isbn</code> &rarr; out: <code>Book</code> (or <code>null</code>)</td>
-        <td>Finds one book by ISBN; joins its <code>&lt;author&gt;</code> elements into <code>Authors</code> and the comma-separated <code>AuthorsDisplay</code> string.</td>
+        <td>in: <code>string isbn</code> &rarr; out: <code>Result&lt;Book&gt;</code></td>
+        <td>Finds one book by ISBN; joins its <code>&lt;author&gt;</code> elements into <code>Authors</code> and the comma-separated <code>AuthorsDisplay</code> string. Returns a failed <code>Result</code> (<code>NotFound</code>) instead of <code>null</code>, so reads and writes share one failure convention.</td>
         <td><code>BookstoreSchema</code> (validates file on load)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
-        <td><code>GetByIsbn_ReadsMultipleAuthorsIntoAList</code>, <code>GetByIsbn_ReturnsCorrectBook</code>, <code>GetByIsbn_OnSameInstance_SeesBookAddedThroughThatInstance</code></td>
+        <td><code>GetByIsbn_ReadsMultipleAuthorsIntoAList</code>, <code>GetByIsbn_ReturnsCorrectBook</code>, <code>GetByIsbn_OnSameInstance_SeesBookAddedThroughThatInstance</code>, <code>GetByIsbn_WhenIsbnNotFound_ReturnsNotFoundWithNoValue</code></td>
       </tr>
       <tr>
         <td><code>Add</code></td>
-        <td>in: <code>Book book</code> &rarr; out: <code>void</code></td>
-        <td>Validates the book, then appends it as a new <code>&lt;book&gt;</code> element and saves &mdash; serializing every field, including the optional <code>cover</code> attribute and multiple <code>&lt;author&gt;</code> elements.</td>
+        <td>in: <code>Book book</code> &rarr; out: <code>Result</code></td>
+        <td>Validates the book; if valid and the ISBN is not already taken, appends it as a new <code>&lt;book&gt;</code> element and saves &mdash; serializing every field, including the optional <code>cover</code> attribute and multiple <code>&lt;author&gt;</code> elements. Returns a failed <code>Result</code> (<code>ValidationFailed</code> or <code>Conflict</code>) instead of throwing for these expected, non-exceptional outcomes.</td>
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
-        <td><code>ArgumentException</code> from validation failures; <code>InvalidOperationException</code> if a book with the same ISBN already exists</td>
-        <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code></td>
+        <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
+        <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code>, <code>Add_WithBlankTitle_ReturnsValidationFailureAndWritesNothing</code>, <code>Add_WithNonThirteenDigitIsbn_ReturnsValidationFailure</code>, <code>Add_WithNoAuthors_ReturnsValidationFailure</code>, <code>Add_DuplicateIsbn_ReturnsConflictAndDoesNotDuplicate</code>, <code>Add_WithMultipleInvalidFields_ReportsEveryViolation</code></td>
       </tr>
       <tr>
         <td><code>Edit</code></td>
-        <td>in: <code>Book book</code> &rarr; out: <code>bool</code></td>
-        <td>Validates the book; if a book with the same ISBN exists, replaces it entirely (all fields) and saves, returning <code>true</code>. Returns <code>false</code> without writing anything if no book with that ISBN is found.</td>
+        <td>in: <code>Book book</code> &rarr; out: <code>Result</code></td>
+        <td>Validates the book; if valid and a book with the same ISBN exists, replaces it entirely (all fields) and saves. Returns a failed <code>Result</code> (<code>ValidationFailed</code> or <code>NotFound</code>) instead of throwing for these expected, non-exceptional outcomes.</td>
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
-        <td><code>ArgumentException</code> from validation failures</td>
-        <td><code>Edit_ReplacesAllFields_AndReturnsTrue</code>, <code>Edit_WhenIsbnNotFound_ReturnsFalseAndChangesNothing</code></td>
+        <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
+        <td><code>Edit_ReplacesAllFields_AndReturnsSuccess</code>, <code>Edit_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing</code>, <code>Edit_WithInvalidBook_ReturnsValidationFailure</code></td>
       </tr>
       <tr>
         <td><code>Delete</code></td>
-        <td>in: <code>string isbn</code> &rarr; out: <code>bool</code></td>
-        <td>Removes the <code>&lt;book&gt;</code> matching the given ISBN and saves, returning <code>true</code>. Returns <code>false</code> without writing anything if no book with that ISBN is found.</td>
+        <td>in: <code>string isbn</code> &rarr; out: <code>Result</code></td>
+        <td>Removes the <code>&lt;book&gt;</code> matching the given ISBN and saves. Returns a failed <code>Result</code> (<code>NotFound</code>) without writing anything if no book with that ISBN is found.</td>
         <td><code>FileVersionStore</code> (optional, snapshots the new state)</td>
+        <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
+        <td><code>Delete_RemovesOnlyTheTargetBook</code>, <code>Delete_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="error-handling">
+  <h2>Error Handling (Result &amp; HTTP mapping)</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Result.Ok / Result.Fail</code></td>
+        <td>in: <code>ResultError, string[] errors</code> &rarr; out: <code>Result</code></td>
+        <td>Factories for the shared operation-outcome type. <code>Success</code> is derived from <code>Error == None</code>, so the two can never disagree. <code>Errors</code> lists every violation, not just the first. A null <code>Book</code> is reported as a caller error in the message, distinct from user-input violations.</td>
         <td>&mdash;</td>
-        <td><code>Delete_RemovesOnlyTheTargetBook</code>, <code>Delete_WhenIsbnNotFound_ReturnsFalseAndChangesNothing</code></td>
+        <td><code>ArgumentException</code> if <code>Fail</code> is called with <code>ResultError.None</code> (programmer error, fails loudly at construction)</td>
+        <td>exercised by every repository test asserting <code>Success</code>/<code>Error</code></td>
+      </tr>
+      <tr>
+        <td><code>Result&lt;T&gt;.Ok / Fail</code></td>
+        <td>in: <code>T value</code> / <code>ResultError, string[]</code> &rarr; out: <code>Result&lt;T&gt;</code></td>
+        <td>A <code>Result</code> that also carries a value on success, used by lookups (<code>GetByIsbn</code>). <code>Value</code> is <code>default</code> on failure.</td>
+        <td><code>Result</code></td>
+        <td>same as <code>Result.Fail</code></td>
+        <td><code>GetByIsbn_WhenIsbnNotFound_ReturnsNotFoundWithNoValue</code></td>
+      </tr>
+      <tr>
+        <td><code>ResultResponses.ToErrorResponse</code></td>
+        <td>in: <code>ApiController, Result</code> &rarr; out: <code>IHttpActionResult</code></td>
+        <td>The one place a failed <code>Result</code> becomes HTTP: <code>ValidationFailed</code>&rarr;400, <code>Conflict</code>&rarr;409, <code>NotFound</code>&rarr;404; an unmapped kind fails loudly as 500. Body is <code>ApiError</code>: <code>errors[]</code> per violation plus the joined <code>message</code> for older clients.</td>
+        <td><code>ApiError</code></td>
+        <td>&mdash;</td>
+        <td><code>Post_WithMultipleInvalidFields_ReturnsEachErrorSeparately</code>, <code>Post_DuplicateIsbn_Returns409</code>, <code>Put_UnknownIsbn_Returns404</code>, <code>Delete_UnknownIsbn_Returns404</code></td>
+      </tr>
+      <tr>
+        <td><code>GlobalExceptionHandler.Handle</code></td>
+        <td>in: <code>ExceptionHandlerContext</code> &rarr; out: <code>void</code> (sets 500 response)</td>
+        <td>Last-resort net for genuinely exceptional failures (registered in <code>WebApiConfig</code>): a schema-invalid data file gets an actionable safe message; anything else a generic one. Never leaks stack traces or exception detail.</td>
+        <td><code>ApiError</code></td>
+        <td>&mdash;</td>
+        <td><code>Handle_SchemaViolation_Returns500WithSafeDataFileMessage</code>, <code>Handle_UnexpectedException_Returns500WithGenericMessage</code></td>
       </tr>
     </tbody>
   </table>
