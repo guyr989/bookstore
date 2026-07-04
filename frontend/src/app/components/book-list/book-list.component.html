@@ -1,12 +1,18 @@
-<div class="header">
+<div class="page-header">
   <h2>Catalog</h2>
-  <a routerLink="/add" class="btn primary">+ Add book</a>
+  <a routerLink="/add" class="btn primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+    Add book
+  </a>
 </div>
 
 @if (loading) {
-  <p class="muted">Loading…</p>
+  <p class="state">Loading…</p>
 } @else if (books.length === 0) {
-  <p class="muted">No books yet. Add the first one!</p>
+  <p class="state">No books yet. Add the first one!</p>
 } @else {
   <table class="table-container">
     <thead>
@@ -15,8 +21,8 @@
         <th>Title</th>
         <th>Author(s)</th>
         <th>Category</th>
-        <th>Year</th>
-        <th>Price</th>
+        <th class="num">Year</th>
+        <th class="num">Price</th>
         <th>Cover</th>
         <th></th>
       </tr>
@@ -28,8 +34,8 @@
           <td data-label="Title">{{ book.title }} <span class="muted">({{ book.language }})</span></td>
           <td data-label="Author(s)"><div class="authors" [title]="authorsOf(book)">{{ authorsOf(book) }}</div></td>
           <td data-label="Category">{{ book.category }}</td>
-          <td data-label="Year">{{ book.year }}</td>
-          <td data-label="Price">{{ book.price | number:'1.2-2' }}</td>
+          <td class="num" data-label="Year">{{ book.year }}</td>
+          <td class="num" data-label="Price">{{ book.price | number:'1.2-2' }}</td>
           <td data-label="Cover">{{ book.cover || '—' }}</td>
           <td class="actions">
             <a [routerLink]="['/edit', book.isbn]" class="btn">Edit</a>

@@ -2,24 +2,26 @@
    (table.table-container); only page-specific rules live here. */
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  margin-bottom: var(--space-4);
 }
-
+.header h2 {
+  margin: 0 0 var(--space-1);
+}
 .hint {
   margin: 0;
   max-width: 60ch;
 }
 
 .actions {
-  white-space: nowrap;
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  white-space: nowrap;
 }
 
 @media screen and (max-width: 768px) {
   .actions {
     justify-content: center;
+    margin-top: var(--space-2);
   }
 }

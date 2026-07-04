@@ -1,13 +1,13 @@
-<div class="header">
+<header class="header">
   <h2>Version history</h2>
   <p class="muted hint">Every save keeps a snapshot of the catalog file. Restore rolls the catalog
     back (the current state is stashed first, so it's undoable).</p>
-</div>
+</header>
 
 @if (loading) {
-  <p class="muted">Loading…</p>
+  <p class="state">Loading…</p>
 } @else if (versions.length === 0) {
-  <p class="muted">No versions yet. They appear here after your first save.</p>
+  <p class="state">No versions yet. They appear here after your first save.</p>
 } @else {
   <table class="table-container">
     <thead>

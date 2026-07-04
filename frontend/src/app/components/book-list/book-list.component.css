@@ -1,31 +1,27 @@
 /* Table base + mobile card layout are shared via styles.css
    (table.table-container); only page-specific rules live here. */
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.authors {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
 
 .actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
   white-space: nowrap;
-  width: 100%;
-  display: grid;
-  gap: 1em;
-}
-
-.actions .btn {
-  text-align: center;
 }
 
 @media screen and (max-width: 768px) {
-
+  .authors {
+    max-width: none;
+    white-space: normal;
+  }
   .actions {
-    display: flex;
-    padding: 0;
-    max-width: 450px;
-    margin: 1em auto 0;
-    border: 0;
+    justify-content: center;
+    margin-top: var(--space-2);
   }
 }
