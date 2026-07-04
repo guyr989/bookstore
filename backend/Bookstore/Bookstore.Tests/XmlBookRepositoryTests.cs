@@ -83,28 +83,41 @@ namespace Bookstore.Tests
             var repo = new XmlBookRepository(_xmlPath);
             var book = repo.GetByIsbn("9051234567897");
             Assert.AreEqual("Harry Potter", book.Title);
+            Assert.AreEqual("children", book.Category);
             Assert.AreEqual("J K. Rowling", book.AuthorsDisplay);
             Assert.AreEqual(2005, book.Year);
+            Assert.IsNull(book.Cover);
             Assert.AreEqual(29.99m, book.Price);
         }
 
         [Test]
-        public void Edit()
+        public void Edit_ReplacesAllFields_AndReturnsTrue()
         {
             var repo = new XmlBookRepository(_xmlPath);
-            repo.Edit(new Book {
-                Isbn = "9051234567897",
-                Title = "Harry Potter and the Philosopher's Stone",
+
+            var edited = repo.Edit(new Book
+            {
+                Isbn     = "9051234567897",
+                Title    = "Harry Potter and the Philosopher's Stone",
                 Language = "en",
-                Authors = { "J K. Rowling" },
-                Year = 2005,
-                Price = 29.99m,
-                Category = "children",
-                Cover = null
+                Authors  = { "J. K. Rowling", "Guest Illustrator" },
+                Year     = 1997,
+                Price    = 24.99m,
+                Category = "fantasy",
+                Cover    = "hardcover"
             });
-            var reloaded = new XmlBookRepository(_xmlPath);
-            var newBook = reloaded.GetByIsbn("9051234567897");
-            Assert.AreEqual("Harry Potter and the Philosopher's Stone", newBook.Title);
+
+            Assert.IsTrue(edited);
+
+            var reloaded = new XmlBookRepository(_xmlPath).GetByIsbn("9051234567897");
+            Assert.AreEqual("Harry Potter and the Philosopher's Stone", reloaded.Title);
+            Assert.AreEqual("en", reloaded.Language);
+            Assert.AreEqual(2, reloaded.Authors.Count);
+            Assert.AreEqual("J. K. Rowling, Guest Illustrator", reloaded.AuthorsDisplay);
+            Assert.AreEqual(1997, reloaded.Year);
+            Assert.AreEqual(24.99m, reloaded.Price);
+            Assert.AreEqual("fantasy", reloaded.Category);
+            Assert.AreEqual("hardcover", reloaded.Cover);
         }
 
         [Test]
