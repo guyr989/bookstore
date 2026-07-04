@@ -114,7 +114,7 @@
         <td>Finds one book by ISBN; joins its <code>&lt;author&gt;</code> elements into <code>Authors</code> and the comma-separated <code>AuthorsDisplay</code> string.</td>
         <td><code>BookstoreSchema</code> (validates file on load)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
-        <td><code>GetByIsbn_ReadsMultipleAuthorsIntoAList</code></td>
+        <td><code>GetByIsbn_ReadsMultipleAuthorsIntoAList</code>, <code>GetByIsbn_ReturnsCorrectBook</code></td>
       </tr>
       <tr>
         <td><code>Add</code></td>
@@ -123,6 +123,14 @@
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
         <td><code>ArgumentException</code> from validation failures; <code>InvalidOperationException</code> if a book with the same ISBN already exists</td>
         <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code></td>
+      </tr>
+      <tr>
+        <td><code>Edit</code></td>
+        <td>in: <code>Book book</code> &rarr; out: <code>bool</code></td>
+        <td>Validates the book; if a book with the same ISBN exists, replaces it entirely (all fields) and saves, returning <code>true</code>. Returns <code>false</code> without writing anything if no book with that ISBN is found.</td>
+        <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
+        <td><code>ArgumentException</code> from validation failures</td>
+        <td><code>Edit_ReplacesAllFields_AndReturnsTrue</code></td>
       </tr>
     </tbody>
   </table>
