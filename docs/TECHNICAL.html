@@ -98,7 +98,11 @@
   <h2>Contents</h2>
   <ul>
     <li><a href="#xmlbookrepository">XmlBookRepository</a></li>
+    <li><a href="#fileversionstore">FileVersionStore</a></li>
     <li><a href="#error-handling">Error Handling (Result &amp; HTTP mapping)</a></li>
+    <li><a href="#bookscontroller">BooksController</a></li>
+    <li><a href="#reportscontroller">ReportsController</a></li>
+    <li><a href="#versionscontroller">VersionsController</a></li>
   </ul>
 </nav>
 
@@ -153,6 +157,49 @@
   </table>
 </section>
 
+<section id="fileversionstore">
+  <h2>FileVersionStore</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>List</code></td>
+        <td>in: &mdash; &rarr; out: <code>IList&lt;FileVersion&gt;</code></td>
+        <td>Version numbers and timestamps currently on disk, ascending. Parses file names strictly (only exact <code>bookstore.vNNNN.xml</code> matches count), filtering editor/backup litter that <code>Directory.GetFiles</code>' 3-char-extension quirk would otherwise sweep in.</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>List_WhenNothingSnapshotted_IsEmpty</code>, <code>Snapshot_CreatesNumberedVersionsStartingAtOne</code>, <code>List_IgnoresFilesThatOnlyResembleVersions</code></td>
+      </tr>
+      <tr>
+        <td><code>Snapshot</code></td>
+        <td>in: &mdash; &rarr; out: <code>FileVersion</code></td>
+        <td>Copies the current data file into the next numbered slot (highest remaining + 1 &mdash; numbers are never reused) and stamps it with the moment it was taken, not the file's write time. Prunes oldest-first beyond 100 kept versions. All mutations serialize on one process-wide gate so concurrent saves cannot claim the same number.</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>Snapshot_CreatesNumberedVersionsStartingAtOne</code>, <code>Snapshot_CopiesTheCurrentFileContent</code>, <code>Snapshot_StampsTheTimeItWasTaken_NotTheDataFilesWriteTime</code>, <code>Snapshot_NumbersContinueFromTheHighestRemainingVersion</code></td>
+      </tr>
+      <tr>
+        <td><code>Restore</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>bool</code></td>
+        <td>Copies the version back over the data file, returning <code>false</code> if it does not exist. Validates the snapshot against the XSD first (never rolls the live catalog back to a corrupted file) and stashes the current state before overwriting, so a restore is itself undoable &mdash; unless the data file is already gone, in which case restoring is the recovery path.</td>
+        <td><code>BookstoreSchema</code> (validates the snapshot)</td>
+        <td><code>XmlSchemaValidationException</code> if the snapshot fails schema validation</td>
+        <td><code>Restore_CopiesTheVersionBackOverTheDataFile</code>, <code>Restore_SnapshotsTheCurrentStateFirst_SoARestoreIsUndoable</code>, <code>Restore_WhenVersionMissing_ReturnsFalseAndChangesNothing</code>, <code>Restore_WhenDataFileIsMissing_StillRestoresTheVersion</code>, <code>Restore_WhenSnapshotIsCorrupted_ThrowsAndChangesNothing</code></td>
+      </tr>
+      <tr>
+        <td><code>Delete</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>bool</code></td>
+        <td>Removes that version's file, returning <code>false</code> if it does not exist. Remaining numbers are untouched (no renumbering).</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td><code>Delete_RemovesOnlyThatVersion</code>, <code>Delete_WhenVersionMissing_ReturnsFalse</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
 <section id="error-handling">
   <h2>Error Handling (Result &amp; HTTP mapping)</h2>
   <table>
@@ -191,6 +238,120 @@
         <td><code>ApiError</code></td>
         <td>&mdash;</td>
         <td><code>Handle_SchemaViolation_Returns500WithSafeDataFileMessage</code>, <code>Handle_UnexpectedException_Returns500WithGenericMessage</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="bookscontroller">
+  <h2>BooksController</h2>
+  <p>
+    The HTTP surface over <code>XmlBookRepository</code>. Every action returns
+    an <code>IHttpActionResult</code>; expected failures are never thrown &mdash;
+    the repository's <code>Result</code> is routed through the single
+    <code>ToErrorResponse</code> mapper (see
+    <a href="#error-handling">Error Handling</a>), so status codes live in one
+    place. A schema-invalid data file is the one genuinely exceptional case and
+    surfaces as a safe 500 via <code>GlobalExceptionHandler</code>.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GetAll</code></td>
+        <td>in: &mdash; &rarr; out: <code>200</code> <code>IList&lt;Book&gt;</code></td>
+        <td>Returns the whole catalog. An empty catalog is a valid empty list, never an error.</td>
+        <td><code>XmlBookRepository</code></td>
+        <td>&mdash;</td>
+        <td><code>GetAll_ReturnsOkWithAllBooks</code></td>
+      </tr>
+      <tr>
+        <td><code>Get</code></td>
+        <td>in: <code>string isbn</code> &rarr; out: <code>200</code> <code>Book</code> / <code>404</code></td>
+        <td>One book by ISBN. A miss is a failed <code>Result&lt;Book&gt;</code> mapped to <code>404</code>, not a thrown exception.</td>
+        <td><code>XmlBookRepository</code>, <code>ToErrorResponse</code></td>
+        <td>&mdash;</td>
+        <td><code>Get_KnownIsbn_ReturnsOkWithBook</code>, <code>Get_UnknownIsbn_Returns404</code></td>
+      </tr>
+      <tr>
+        <td><code>Post</code></td>
+        <td>in: <code>Book</code> (body) &rarr; out: <code>201</code> / <code>400</code> / <code>409</code></td>
+        <td>Creates a book. A missing body is a plain <code>400</code>; validation and duplicate-ISBN failures route through <code>ToErrorResponse</code>, which reports <em>every</em> violation at once (<code>errors[]</code>).</td>
+        <td><code>XmlBookRepository</code>, <code>ToErrorResponse</code></td>
+        <td>&mdash;</td>
+        <td><code>Post_ValidBook_Returns201AndPersists</code>, <code>Post_InvalidBook_Returns400</code>, <code>Post_WithMultipleInvalidFields_ReturnsEachErrorSeparately</code>, <code>Post_NullBody_Returns400</code>, <code>Post_DuplicateIsbn_Returns409</code></td>
+      </tr>
+      <tr>
+        <td><code>Put</code></td>
+        <td>in: <code>string isbn</code>, <code>Book</code> (body) &rarr; out: <code>200</code> / <code>400</code> / <code>404</code></td>
+        <td>Replaces the book at that ISBN. The URL is the identity &mdash; the route's ISBN is stamped onto the body before saving, so a mismatched body ISBN can't retarget the write.</td>
+        <td><code>XmlBookRepository</code>, <code>ToErrorResponse</code></td>
+        <td>&mdash;</td>
+        <td><code>Put_KnownIsbn_Returns200AndPersistsChanges</code>, <code>Put_UnknownIsbn_Returns404</code>, <code>Put_InvalidBook_Returns400</code></td>
+      </tr>
+      <tr>
+        <td><code>Delete</code></td>
+        <td>in: <code>string isbn</code> &rarr; out: <code>204</code> / <code>404</code></td>
+        <td>Removes the book at that ISBN, or <code>404</code> if none matches.</td>
+        <td><code>XmlBookRepository</code>, <code>ToErrorResponse</code></td>
+        <td>&mdash;</td>
+        <td><code>Delete_KnownIsbn_Returns204AndRemoves</code>, <code>Delete_UnknownIsbn_Returns404</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="reportscontroller">
+  <h2>ReportsController</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>BooksHtml</code></td>
+        <td>in: &mdash; &rarr; out: <code>200</code> <code>text/html</code></td>
+        <td>Renders the catalog as a standalone, self-styled HTML table (title, authors, category, year, price) with a book count and combined list-price total. Every field value is HTML-encoded, so a book titled <code>&lt;script&gt;&hellip;</code> renders as text &mdash; a stored-XSS guard on the report.</td>
+        <td><code>XmlBookRepository</code></td>
+        <td><code>XmlSchemaValidationException</code> if the data file fails schema validation (surfaced as a safe 500 by <code>GlobalExceptionHandler</code>)</td>
+        <td><code>BooksHtml_ReturnsHtmlTableWithEveryBook</code>, <code>BooksHtml_ShowsBookCountAndTotalPrice</code>, <code>BooksHtml_EscapesHtmlInBookFields</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="versionscontroller">
+  <h2>VersionsController</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>I/O</th><th>Description</th><th>Dependencies</th><th>Throws</th><th>Covering Test(s)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GetAll</code></td>
+        <td>in: &mdash; &rarr; out: <code>200</code> <code>IList&lt;FileVersion&gt;</code></td>
+        <td>Lists every snapshot (number + timestamp) available to roll back to.</td>
+        <td><code>FileVersionStore</code></td>
+        <td>&mdash;</td>
+        <td><code>GetAll_ReturnsOkWithEveryVersion</code></td>
+      </tr>
+      <tr>
+        <td><code>Restore</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>200</code> / <code>404</code> / <code>409</code></td>
+        <td>Rolls the data file back to a snapshot. A missing version is <code>404</code>; a snapshot that no longer passes schema validation is caught and mapped to <code>409</code> (&ldquo;corrupted&rdquo;) rather than being allowed to overwrite the live catalog.</td>
+        <td><code>FileVersionStore</code></td>
+        <td>&mdash; (<code>XmlSchemaValidationException</code> from a corrupt snapshot is caught and returned as <code>409</code>)</td>
+        <td><code>Restore_WhenVersionExists_ReturnsOkAndRestoresTheFile</code>, <code>Restore_WhenVersionMissing_Returns404</code>, <code>Restore_WhenSnapshotIsCorrupted_Returns409AndLeavesDataFileUntouched</code></td>
+      </tr>
+      <tr>
+        <td><code>Delete</code></td>
+        <td>in: <code>int number</code> &rarr; out: <code>204</code> / <code>404</code></td>
+        <td>Discards one snapshot, or <code>404</code> if that version does not exist. Remaining versions keep their numbers.</td>
+        <td><code>FileVersionStore</code></td>
+        <td>&mdash;</td>
+        <td><code>Delete_WhenVersionExists_Returns204</code>, <code>Delete_WhenVersionMissing_Returns404</code></td>
       </tr>
     </tbody>
   </table>

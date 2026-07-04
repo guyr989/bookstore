@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Xml.Schema;
 using NUnit.Framework;
 using Bookstore.Core.Persistence;
 
@@ -54,13 +55,26 @@ namespace Bookstore.Tests
         {
             File.WriteAllText(_dataPath, "<bookstore><!-- snapshot me --></bookstore>");
 
-            var version = _store.Snapshot();
+            _store.Snapshot();
             File.WriteAllText(_dataPath, "<bookstore />"); // mutate afterwards
 
             var versionFile = Path.Combine(_dir, "versions", "bookstore.v0001.xml");
             Assert.AreEqual("<bookstore><!-- snapshot me --></bookstore>",
                 File.ReadAllText(versionFile));
-            Assert.LessOrEqual(version.SavedAtUtc, DateTime.UtcNow.AddMinutes(1));
+        }
+
+        [Test]
+        public void Snapshot_StampsTheTimeItWasTaken_NotTheDataFilesWriteTime()
+        {
+            // File.Copy preserves the source's write time; a snapshot must
+            // carry the moment it was taken, which is what the UI displays.
+            File.SetLastWriteTimeUtc(_dataPath,
+                new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            var justBefore = DateTime.UtcNow.AddMinutes(-1);
+
+            var version = _store.Snapshot();
+
+            Assert.GreaterOrEqual(version.SavedAtUtc, justBefore);
         }
 
         [Test]
@@ -87,6 +101,22 @@ namespace Bookstore.Tests
 
             var v2 = Path.Combine(_dir, "versions", "bookstore.v0002.xml");
             Assert.AreEqual("<bookstore><!-- new --></bookstore>", File.ReadAllText(v2));
+        }
+
+        [Test]
+        public void Restore_WhenSnapshotIsCorrupted_ThrowsAndChangesNothing()
+        {
+            File.WriteAllText(_dataPath, "<bookstore><!-- live --></bookstore>");
+            _store.Snapshot();
+            // Schema-invalid (book missing category, isbn not 13 digits):
+            // rolling back to this would corrupt the live catalog.
+            File.WriteAllText(Path.Combine(_dir, "versions", "bookstore.v0001.xml"),
+                "<bookstore><book><isbn>123</isbn></book></bookstore>");
+
+            Assert.Throws<XmlSchemaValidationException>(() => _store.Restore(1));
+
+            Assert.AreEqual("<bookstore><!-- live --></bookstore>", File.ReadAllText(_dataPath));
+            Assert.AreEqual(new[] { 1 }, _store.List().Select(v => v.Number).ToArray());
         }
 
         [Test]
@@ -150,7 +180,6 @@ namespace Bookstore.Tests
 
             var next = _store.Snapshot();
 
-            // Next number is always max remaining + 1.
             Assert.AreEqual(2, next.Number);
         }
     }
