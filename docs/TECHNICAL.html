@@ -110,6 +110,14 @@
     </thead>
     <tbody>
       <tr>
+        <td><code>GetAll</code></td>
+        <td>in: &mdash; &rarr; out: <code>IList&lt;Book&gt;</code></td>
+        <td>Loads the whole file, validates it against the XSD, and maps every <code>&lt;book&gt;</code> element to a <code>Book</code>. An empty catalog is a valid empty list, not a failure &mdash; which is why this read keeps a plain list while the keyed lookup uses <code>Result&lt;Book&gt;</code>.</td>
+        <td><code>BookstoreSchema</code> (validates file on load)</td>
+        <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
+        <td><code>GetAll_WhenFileViolatesSchema_Throws</code> (the schema gate); happy-path mapping is exercised through <code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code> and <code>Delete_RemovesOnlyTheTargetBook</code></td>
+      </tr>
+      <tr>
         <td><code>GetByIsbn</code></td>
         <td>in: <code>string isbn</code> &rarr; out: <code>Result&lt;Book&gt;</code></td>
         <td>Finds one book by ISBN; joins its <code>&lt;author&gt;</code> elements into <code>Authors</code> and the comma-separated <code>AuthorsDisplay</code> string. Returns a failed <code>Result</code> (<code>NotFound</code>) instead of <code>null</code>, so reads and writes share one failure convention.</td>
@@ -123,7 +131,7 @@
         <td>Validates the book; if valid and the ISBN is not already taken, appends it as a new <code>&lt;book&gt;</code> element and saves &mdash; serializing every field, including the optional <code>cover</code> attribute and multiple <code>&lt;author&gt;</code> elements. Returns a failed <code>Result</code> (<code>ValidationFailed</code> or <code>Conflict</code>) instead of throwing for these expected, non-exceptional outcomes.</td>
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
-        <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code>, <code>Add_WithBlankTitle_ReturnsValidationFailureAndWritesNothing</code>, <code>Add_WithNonThirteenDigitIsbn_ReturnsValidationFailure</code>, <code>Add_WithNoAuthors_ReturnsValidationFailure</code>, <code>Add_DuplicateIsbn_ReturnsConflictAndDoesNotDuplicate</code>, <code>Add_WithMultipleInvalidFields_ReportsEveryViolation</code></td>
+        <td><code>Add_PersistsNewBook_SoAFreshRepositoryCanReadItBack</code>, <code>Add_WithBlankTitle_ReturnsValidationFailureAndWritesNothing</code>, <code>Add_WithNonThirteenDigitIsbn_ReturnsValidationFailure</code>, <code>Add_WithNoAuthors_ReturnsValidationFailure</code>, <code>Add_DuplicateIsbn_ReturnsConflictAndDoesNotDuplicate</code>, <code>Add_WithMultipleInvalidFields_ReportsEveryViolation</code>, <code>Add_WithVersionStore_SnapshotsTheNewStateForRollback</code>, <code>Add_ThenRestoringV1_UndoesTheVeryFirstSave</code></td>
       </tr>
       <tr>
         <td><code>Edit</code></td>
@@ -131,7 +139,7 @@
         <td>Validates the book; if valid and a book with the same ISBN exists, replaces it entirely (all fields) and saves. Returns a failed <code>Result</code> (<code>ValidationFailed</code> or <code>NotFound</code>) instead of throwing for these expected, non-exceptional outcomes.</td>
         <td><code>BookValidator</code> (field validation); <code>FileVersionStore</code> (optional, snapshots the new state)</td>
         <td><code>XmlSchemaValidationException</code> if the underlying file fails schema validation</td>
-        <td><code>Edit_ReplacesAllFields_AndReturnsSuccess</code>, <code>Edit_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing</code>, <code>Edit_WithInvalidBook_ReturnsValidationFailure</code></td>
+        <td><code>Edit_ReplacesAllFields_AndReturnsSuccess</code>, <code>Edit_WhenIsbnNotFound_ReturnsNotFoundAndChangesNothing</code>, <code>Edit_WithInvalidBook_ReturnsValidationFailure</code>, <code>Edit_WhenIsbnNotFound_WithVersionStore_SnapshotsNothing</code></td>
       </tr>
       <tr>
         <td><code>Delete</code></td>
