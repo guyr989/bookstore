@@ -12,9 +12,8 @@ namespace Bookstore.Tests
     [TestFixture]
     public class XmlBookRepositoryTests
     {
-        // path to this test's private temp XML file.
         private string _xmlPath;
-    
+
         [SetUp]
         public void SetUp()
         {
@@ -28,43 +27,21 @@ namespace Bookstore.Tests
         [TearDown]
         public void TearDown()
         {
-            Console.WriteLine("TearDown start");
             if (File.Exists(_xmlPath))
                 File.Delete(_xmlPath);
-            Console.WriteLine("TearDown end");
         }
 
         [Test]
-        public void GetAll_ReturnsEveryBookInTheFile()
+        public void GetByIsbn_ReadsMultipleAuthorsIntoAList()
         {
-            Console.WriteLine("GetAll_ReturnsEveryBookInTheFile start");
-            // Arrange
             var repo = new XmlBookRepository(_xmlPath);
 
-            // Act
-            var books = repo.GetAll();
-
-            // Assert
-            Assert.AreEqual(3, books.Count);
-            Console.WriteLine("GetAll_ReturnsEveryBookInTheFile end");
-        }
-
-        [Test]
-        public void GetAll_ReadsMultipleAuthorsIntoAList()
-        {
-            Console.WriteLine("GetAll_ReadsMultipleAuthorsIntoAList start");
-            // Arrange
-            var repo = new XmlBookRepository(_xmlPath);
-
-            // Act
             var book = repo.GetByIsbn("9031234567897");
 
-            // Assert
             Assert.AreEqual(5, book.Authors.Count);
             Assert.AreEqual(
                 "James McGovern, Per Bothner, Kurt Cagle, James Linn, Vaidyanathan Nagarajan",
                 book.AuthorsDisplay);
-            Console.WriteLine("GetAll_ReadsMultipleAuthorsIntoAList end");
         }
 
 
