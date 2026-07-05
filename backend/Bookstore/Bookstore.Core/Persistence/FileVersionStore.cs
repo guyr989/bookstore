@@ -18,11 +18,11 @@ namespace Bookstore.Core.Persistence
         // growth and keeps directory scans cheap on a long-lived deployment.
         private const int MaxKept = 100;
 
-        // One gate for all instances: stores are constructed per-request, but
-        // they all mutate the same versions folder. Serializing the
-        // read-number-then-copy sequence prevents two concurrent saves from
-        // claiming the same version number.
-        private static readonly object _gate = new object();
+        // Shared with XmlBookRepository (see PersistenceGate): serializing the
+        // read-number-then-copy sequence against repository writes prevents two
+        // concurrent saves from claiming the same version number or racing the
+        // data-file write.
+        private static readonly object _gate = PersistenceGate.Sync;
 
         private readonly string _dataPath;
         private readonly string _versionsDir;

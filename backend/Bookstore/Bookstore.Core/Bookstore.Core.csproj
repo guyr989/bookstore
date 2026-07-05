@@ -55,6 +55,7 @@
     <Compile Include="Persistence\BookstoreSchema.cs" />
     <Compile Include="Persistence\FileVersion.cs" />
     <Compile Include="Persistence\FileVersionStore.cs" />
+    <Compile Include="Persistence\PersistenceGate.cs" />
     <Compile Include="Persistence\XmlBookRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Validation\BookValidator.cs" />
