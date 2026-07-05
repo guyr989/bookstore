@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Book } from '../../models/book';
@@ -9,7 +8,7 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-book-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './book-form.component.html',
   styleUrls: ['./book-form.component.css']
 })
@@ -157,9 +156,10 @@ export class BookFormComponent implements OnInit {
   }
 }
 
-// Input purification: trim and strip any markup characters so stored data is
-// plain text. Angular templates escape on render (context-aware), so this is
-// defense-in-depth for anything else that ever consumes the XML.
+// Trim surrounding whitespace before persisting. Escaping is handled where it
+// matters -- Angular escapes on render, and the server report escapes with
+// SecurityElement.Escape -- so stripping markup here would only mangle valid
+// titles like "1 < 2".
 export function sanitize(value: string): string {
-  return (value ?? '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim();
+  return (value ?? '').trim();
 }

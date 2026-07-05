@@ -9,17 +9,12 @@ import { ToastService } from '../../services/toast.service';
 import { BookFormComponent, sanitize } from './book-form.component';
 
 describe('sanitize (input purification)', () => {
-  it('trims whitespace', () => {
+  it('trims surrounding whitespace', () => {
     expect(sanitize('  Harry Potter  ')).toBe('Harry Potter');
   });
 
-  it('strips HTML tags', () => {
-    expect(sanitize('<script>alert(1)</script>Evil')).toBe('alert(1)Evil');
-  });
-
-  it('removes angle brackets', () => {
-    expect(sanitize('1 < 2 and 3 > 2')).not.toContain('<');
-    expect(sanitize('1 < 2 and 3 > 2')).not.toContain('>');
+  it('preserves angle brackets in valid text (escaping is done on render)', () => {
+    expect(sanitize('1 < 2 and 3 > 2')).toBe('1 < 2 and 3 > 2');
   });
 
   it('handles null-ish input', () => {
