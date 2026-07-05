@@ -204,6 +204,36 @@ namespace Bookstore.Tests
             Assert.AreEqual(originalBookCount, new XmlBookRepository(_xmlPath).GetAll().Count);
         }
 
+        [Test]
+        public void Add_UnderConcurrentWrites_PersistsEveryBook_WithNoLostUpdates()
+        {
+            // Regression for the read-modify-write race: each Add loads the
+            // whole file, mutates it, and saves it back. Without a shared lock
+            // across the repository (and its version store), concurrent saves
+            // clobber one another and books silently vanish. With versioning on,
+            // this also exercises the nested save() -> Snapshot() lock path.
+            var versions = new FileVersionStore(_xmlPath);
+            var originalCount = new XmlBookRepository(_xmlPath, versions).GetAll().Count;
+
+            const int writers = 24;
+            System.Threading.Tasks.Parallel.For(0, writers, i =>
+            {
+                // A fresh repository per task, mirroring the per-request lifetime.
+                var repo = new XmlBookRepository(_xmlPath, versions);
+                var book = ValidBook();
+                book.Isbn = "978" + i.ToString("D10");
+                book.Title = "Concurrent Book " + i;
+                Assert.IsTrue(repo.Add(book).Success);
+            });
+
+            var all = new XmlBookRepository(_xmlPath).GetAll();
+            Assert.AreEqual(originalCount + writers, all.Count,
+                "Concurrent adds lost updates -- the persistence lock is not serializing writes.");
+            for (var i = 0; i < writers; i++)
+                Assert.IsTrue(all.Any(b => b.Isbn == "978" + i.ToString("D10")),
+                    "Missing book from writer " + i);
+        }
+
         // ---- Data integrity (Step 13) ---------------------------------------
 
         // Builds an otherwise-valid book, so each negative test can isolate the

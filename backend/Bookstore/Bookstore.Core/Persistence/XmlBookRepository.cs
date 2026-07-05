@@ -26,10 +26,13 @@ namespace Bookstore.Core.Persistence
 
         public IList<Book> GetAll()
         {
-            return loadDoc().Root
-                            .Elements("book")
-                            .Select(toBook)
-                            .ToList();
+            lock (PersistenceGate.Sync)
+            {
+                return loadDoc().Root
+                                .Elements("book")
+                                .Select(toBook)
+                                .ToList();
+            }
         }
 
         public Result<Book> GetByIsbn(string isbn)
@@ -37,10 +40,13 @@ namespace Bookstore.Core.Persistence
             if (string.IsNullOrWhiteSpace(isbn))
                 return Result<Book>.Fail(ResultError.NotFound, noBookMessage(isbn));
 
-            var el = findBook(loadDoc(), isbn);
-            return el != null
-                ? Result<Book>.Ok(toBook(el))
-                : Result<Book>.Fail(ResultError.NotFound, noBookMessage(isbn));
+            lock (PersistenceGate.Sync)
+            {
+                var el = findBook(loadDoc(), isbn);
+                return el != null
+                    ? Result<Book>.Ok(toBook(el))
+                    : Result<Book>.Fail(ResultError.NotFound, noBookMessage(isbn));
+            }
         }
 
         public Result Add(Book book)
@@ -48,15 +54,21 @@ namespace Bookstore.Core.Persistence
             var validation = BookValidator.Validate(book);
             if (!validation.Success) return validation;
 
-            var doc = loadDoc();
+            // Load -> check -> save must be atomic: without the lock two
+            // concurrent adds can both pass the duplicate check, or one save can
+            // overwrite the other's write.
+            lock (PersistenceGate.Sync)
+            {
+                var doc = loadDoc();
 
-            if (findBook(doc, book.Isbn) != null)
-                return Result.Fail(ResultError.Conflict,
-                    "A book with ISBN '" + book.Isbn + "' already exists.");
+                if (findBook(doc, book.Isbn) != null)
+                    return Result.Fail(ResultError.Conflict,
+                        "A book with ISBN '" + book.Isbn + "' already exists.");
 
-            doc.Root.Add(toXml(book));
-            save(doc);
-            return Result.Ok();
+                doc.Root.Add(toXml(book));
+                save(doc);
+                return Result.Ok();
+            }
         }
 
         public Result Edit(Book book)
@@ -64,28 +76,34 @@ namespace Bookstore.Core.Persistence
             var validation = BookValidator.Validate(book);
             if (!validation.Success) return validation;
 
-            var doc = loadDoc();
-            var el = findBook(doc, book.Isbn);
+            lock (PersistenceGate.Sync)
+            {
+                var doc = loadDoc();
+                var el = findBook(doc, book.Isbn);
 
-            if (el == null)
-                return Result.Fail(ResultError.NotFound, noBookMessage(book.Isbn));
+                if (el == null)
+                    return Result.Fail(ResultError.NotFound, noBookMessage(book.Isbn));
 
-            el.ReplaceWith(toXml(book));
-            save(doc);
-            return Result.Ok();
+                el.ReplaceWith(toXml(book));
+                save(doc);
+                return Result.Ok();
+            }
         }
 
         public Result Delete(string isbn)
         {
-            var doc = loadDoc();
-            var el = findBook(doc, isbn);
+            lock (PersistenceGate.Sync)
+            {
+                var doc = loadDoc();
+                var el = findBook(doc, isbn);
 
-            if (el == null)
-                return Result.Fail(ResultError.NotFound, noBookMessage(isbn));
+                if (el == null)
+                    return Result.Fail(ResultError.NotFound, noBookMessage(isbn));
 
-            el.Remove();
-            save(doc);
-            return Result.Ok();
+                el.Remove();
+                save(doc);
+                return Result.Ok();
+            }
         }
 
         // When versioning is enabled, stash the state being REPLACED before
