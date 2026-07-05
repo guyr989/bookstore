@@ -1,9 +1,9 @@
-<div class="header">
+<div class="page-header">
   <h2>{{ isEdit ? 'Edit book' : 'Add a book' }}</h2>
   <a routerLink="/" class="btn">← Back to catalog</a>
 </div>
 
-<form [formGroup]="form" (ngSubmit)="save()" novalidate>
+<form class="panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
   <label>
     ISBN (13 digits)
     <input formControlName="isbn" maxlength="13" placeholder="9781234567890"
@@ -36,7 +36,7 @@
         <input [formControlName]="$index" placeholder="Author name"
                [class.bad]="ctrl.invalid && (ctrl.dirty || ctrl.touched)" />
         <button type="button" class="btn" (click)="removeAuthor($index)"
-                [disabled]="authors.length === 1">−</button>
+                [disabled]="authors.length === 1" aria-label="Remove author">−</button>
       </div>
     }
     <button type="button" class="btn" (click)="addAuthor()">+ Add author</button>
@@ -71,7 +71,7 @@
     </label>
 
     <label>
-      Cover (optional)
+      Cover <span class="muted">(optional)</span>
       <input formControlName="cover" placeholder="e.g. paperback" />
     </label>
   </div>

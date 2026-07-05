@@ -8,10 +8,19 @@ import { BookService } from '../../services/book.service';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="header">
+    <div class="page-header">
       <h2>Catalog report</h2>
       <span class="tools">
-        <button type="button" class="btn" (click)="refresh()">⟳ Refresh</button>
+        <button type="button" class="btn" (click)="refresh()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+            <path d="M3 21v-5h5" />
+          </svg>
+          Refresh
+        </button>
         <a [href]="rawUrl" target="_blank" rel="noopener" class="btn">Open in new tab</a>
         <a routerLink="/" class="btn">← Back to catalog</a>
       </span>
@@ -21,12 +30,10 @@ import { BookService } from '../../services/book.service';
     <iframe [src]="url" sandbox="" title="Bookstore HTML report"></iframe>
   `,
   styles: [`
-    .header { display: flex; justify-content: space-between; align-items: center;
-              flex-wrap: wrap; gap: .5rem; }
-    .tools  { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .tools  { display: flex; gap: var(--space-2); flex-wrap: wrap; }
     iframe  { width: 100%; height: calc(100vh - 12rem); min-height: 320px;
-              border: 1px solid #ddd; border-radius: 6px; background: #fff;
-              margin-top: .75rem; }
+              border: 1px solid var(--border); border-radius: var(--radius-lg);
+              background: var(--surface); box-shadow: var(--shadow-sm); }
   `]
 })
 export class ReportComponent {

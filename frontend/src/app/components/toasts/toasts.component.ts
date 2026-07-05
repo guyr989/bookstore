@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Toast, ToastService } from '../../services/toast.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-toasts',
@@ -11,7 +11,26 @@ import { Toast, ToastService } from '../../services/toast.service';
              [class.error]="toast.kind === 'error'"
              [class.info]="toast.kind === 'info'"
              [attr.role]="toast.kind === 'error' ? 'alert' : 'status'">
-          <span class="icon" aria-hidden="true">{{ iconFor(toast) }}</span>
+          <span class="icon" aria-hidden="true">
+            @switch (toast.kind) {
+              @case ('success') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              }
+              @case ('error') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" /><path d="M12 7.5v5.5" /><path d="M12 16.5h.01" />
+                </svg>
+              }
+              @default {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" /><path d="M12 11v5.5" /><path d="M12 7.5h.01" />
+                </svg>
+              }
+            }
+          </span>
           <span class="text">{{ toast.text }}</span>
           <button type="button" (click)="toastService.dismiss(toast.id)"
                   aria-label="Dismiss notification">×</button>
@@ -20,22 +39,22 @@ import { Toast, ToastService } from '../../services/toast.service';
     </div>
   `,
   styles: [`
-    .toasts { position: fixed; top: 1rem; right: 1rem; z-index: 300;
-              display: flex; flex-direction: column; gap: .5rem;
+    .toasts { position: fixed; top: var(--space-4); right: var(--space-4); z-index: 300;
+              display: flex; flex-direction: column; gap: var(--space-2);
               max-width: min(360px, calc(100vw - 2rem)); }
-    .toast  { padding: .8rem 1rem; border-radius: 8px; color: #fff;
-              min-width: 240px; display: flex; align-items: flex-start;
-              gap: .6rem; box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    .toast  { padding: var(--space-3) var(--space-4); border-radius: var(--radius);
+              color: #fff; min-width: 240px; display: flex; align-items: flex-start;
+              gap: var(--space-2); box-shadow: var(--shadow-md);
               animation: slide-in .2s ease-out; }
-    .toast.success { background: #2e7d32; }
-    .toast.error   { background: #c62828; }
-    .toast.info    { background: #1565c0; }
-    .icon   { font-weight: 700; }
-    .text   { flex: 1; line-height: 1.35; overflow-wrap: break-word;
-              min-width: 0; }
-    .toast button  { background: none; border: none; color: #fff;
-                     font-size: 1.1rem; line-height: 1; cursor: pointer;
-                     padding: 0 .1rem; opacity: .85; }
+    .toast.success { background: var(--success); }
+    .toast.error   { background: var(--danger); }
+    .toast.info    { background: var(--info); }
+    .icon     { display: flex; flex: none; }
+    .icon svg { width: 1.15rem; height: 1.15rem; }
+    .text   { flex: 1; line-height: 1.4; overflow-wrap: break-word; min-width: 0; }
+    .toast button  { background: none; border: none; color: #fff; font-size: 1.25rem;
+                     line-height: 1; cursor: pointer; padding: 0 .1rem; opacity: .85;
+                     flex: none; }
     .toast button:hover { opacity: 1; }
     @keyframes slide-in { from { transform: translateX(1rem); opacity: 0; }
                           to   { transform: none; opacity: 1; } }
@@ -43,12 +62,4 @@ import { Toast, ToastService } from '../../services/toast.service';
 })
 export class ToastsComponent {
   constructor(public toastService: ToastService) {}
-
-  iconFor(toast: Toast): string {
-    switch (toast.kind) {
-      case 'success': return '✓';
-      case 'error':   return '!';
-      default:        return 'ℹ';
-    }
-  }
 }

@@ -1,129 +1,294 @@
-/* Global styles */
+/* =========================================================================
+   Design tokens — one calm, professional slate/blue system.
+   Light mode only (the app has no dark mode). Components reference these
+   variables instead of hardcoded hex, so the palette lives in one place.
+   CSS custom properties cascade through Angular's emulated encapsulation,
+   so component styles can use them too.
+   ========================================================================= */
+:root {
+  /* Surfaces */
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Text */
+  --text: #1e293b;
+  --text-muted: #64748b;
+
+  /* Brand + semantic */
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --on-primary: #ffffff;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-soft: #fef2f2;
+  --success: #15803d;
+  --info: #1d4ed8;
+
+  /* Top bar */
+  --header-bg: #1e293b;
+  --header-text: #cbd5e1;
+  --header-text-active: #ffffff;
+  --header-active-bg: #334155;
+
+  --focus: #1d4ed8;
+
+  /* Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.12);
+
+  --control-h: 2.5rem; /* 40px — comfortable, near the 44px touch target */
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #222;
-  background: #f7f8f9;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
-h2 {
+h2,
+h3 {
   font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+h2 {
+  font-size: 1.375rem;
+  margin: 0 0 var(--space-4);
+}
+h3 {
+  font-size: 1.125rem;
 }
 
+a {
+  color: var(--primary);
+}
+
+/* ---- Buttons ----------------------------------------------------------- */
 .btn {
-  display: inline-block;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid #b0bec5;
-  border-radius: 4px;
-  background: #fff;
-  color: #263238;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
   text-decoration: none;
   font: inherit;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-.btn:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline: 2px solid #1565c0;
-  outline-offset: 2px;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .btn:hover {
-  background: #eceff1;
+  background: var(--surface-muted);
 }
 .btn.primary {
-  background: #1565c0;
-  border-color: #1565c0;
-  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
 }
 .btn.primary:hover {
-  background: #0d47a1;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 .btn.danger {
-  background: #fff;
-  border-color: #c62828;
-  color: #c62828;
+  background: var(--surface);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 .btn.danger:hover {
-  background: #ffebee;
+  background: var(--danger-soft);
 }
 .btn[disabled] {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
+.btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
 
-/* Shared data-table treatment (book list, version history). */
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---- Shared utilities -------------------------------------------------- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.page-header h2 {
+  margin: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+/* Empty / loading placeholders. */
+.state {
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+.mono {
+  font-family: "Cascadia Code", Consolas, "SF Mono", ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+/* ---- Data tables (book list, version history) -------------------------- */
 table.table-container {
-  border-collapse: collapse;
   width: 100%;
-  margin-top: 1rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 table.table-container th,
 table.table-container td {
-  border: 1px solid #ddd;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
+  border-bottom: 1px solid var(--border);
 }
-table.table-container th {
-  background: #f4f4f4;
+table.table-container thead th {
+  background: var(--surface-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-table.table-container tr:nth-child(even) {
-  background: #fafafa;
+table.table-container tbody tr:last-child td {
+  border-bottom: none;
+}
+table.table-container tbody tr:hover {
+  background: var(--surface-muted);
+}
+/* Right-align numeric columns and keep digits from jittering. */
+table.table-container td.num,
+table.table-container th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.mono {
-  font-family: Consolas, monospace;
-}
-.muted {
-  color: #777;
-}
-
-/* Small screens: each row becomes a labeled card (the thead is hidden, so
+/* Small screens: each row becomes a labelled card (the thead is hidden, so
    field names come from each cell's data-label attribute). */
 @media screen and (max-width: 768px) {
-  table.table-container thead {
-    display: none;
-  }
-
   table.table-container,
   table.table-container tbody {
     display: block;
     width: 100%;
   }
-
+  table.table-container thead {
+    display: none;
+  }
+  table.table-container {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
   table.table-container tr {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px;
-    margin-bottom: 20px;
-    padding: 16px;
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
   }
-
   table.table-container td {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    padding: 12px;
-    border-bottom: 1px dashed #f0f0f0;
+    gap: var(--space-4);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border);
   }
-
+  table.table-container td.num {
+    text-align: right;
+  }
   table.table-container td[data-label]::before {
     content: attr(data-label);
     font-weight: 600;
-    color: #607d8b;
+    color: var(--text-muted);
   }
-
   table.table-container td:last-child {
     border-bottom: none;
+  }
+}
+
+/* Respect users who prefer less motion: neutralise all transitions/animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
