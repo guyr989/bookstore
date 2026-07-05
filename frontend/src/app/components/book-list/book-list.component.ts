@@ -41,10 +41,6 @@ export class BookListComponent implements OnInit {
     });
   }
 
-  authorsOf(book: Book): string {
-    return book.authorsDisplay ?? book.authors.join(', ');
-  }
-
   async remove(book: Book): Promise<void> {
     // Explicit confirm before a destructive action.
     const ok = await this.confirm.ask({

@@ -7,5 +7,4 @@ export interface Book {
   price: number;
   category: string;
   cover?: string | null;
-  authorsDisplay?: string;
 }

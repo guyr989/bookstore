@@ -1,5 +1,4 @@
 import { Component, ElementRef, HostListener, ViewChild, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmService } from '../../services/confirm.service';
 
@@ -9,7 +8,7 @@ import { ConfirmService } from '../../services/confirm.service';
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.css']
 })
