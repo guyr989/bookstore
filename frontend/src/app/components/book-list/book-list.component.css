@@ -1,6 +1,18 @@
 /* Table base + mobile card layout are shared via styles.css
    (table.table-container); only page-specific rules live here. */
 
+/* Between the mobile card breakpoint (768px) and roughly 1021px the full
+   table is wider than the content column, so let it scroll horizontally on
+   its own instead of overflowing the page. overflow-x: auto shows the
+   scrollbar only when needed, so it is inert on wide screens and in card
+   mode. The negative-margin/padding pair keeps the table's box-shadow from
+   being clipped at the wrapper's edges. */
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
+}
+
 .authors {
   max-width: 22ch;
   overflow: hidden;
